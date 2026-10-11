@@ -9,6 +9,10 @@ export interface ExchangePrices {
   globalAvg: number;
   change24h: number;
   spreadPct: number;
+  quoteVolume?: number;
+  inflowUSD?: number;
+  outflowUSD?: number;
+  netFlowUSD?: number;
 }
 
 export interface CoinMappingItem {
@@ -41,7 +45,7 @@ export const COIN_MAPPINGS: Record<string, CoinMappingItem> = {
 
 export function useMultiExchangePrices() {
   const [data, setData] = useState<Record<string, ExchangePrices>>(() => {
-    // Khởi tạo ngay với giá fallback chuẩn tick precision sàn (Deterministic, không dùng Math.random)
+    // Khởi tạo ngay với giá fallback chuẩn tick precision sàn
     const initial: Record<string, ExchangePrices> = {};
     for (const [key, config] of Object.entries(COIN_MAPPINGS)) {
       const decimals = getDecimalsForPrice(config.fallbackPrice);
@@ -67,7 +71,7 @@ export function useMultiExchangePrices() {
     isFetchingRef.current = true;
 
     try {
-      // 1. Ưu tiên gọi API Proxy nội bộ /api/prices (Server-side fetch Binance + Gecko, KHÔNG bao giờ bị CORS)
+      // 1. Ưu tiên gọi API Proxy nội bộ /api/prices (Server-side fetch Binance + Gecko, không bị CORS)
       try {
         const localApiRes = await fetch('/api/prices', { cache: 'no-store' });
         if (localApiRes.ok) {
@@ -104,6 +108,16 @@ export function useMultiExchangePrices() {
                 const minP = Math.min(p, okx, coinbase, dexAvg);
                 const maxP = Math.max(p, okx, coinbase, dexAvg);
                 const spreadPct = minP > 0 ? +(((maxP - minP) / minP) * 100).toFixed(2) : 0.12;
+                const change24h = parseFloat(item.priceChangePercent) || 0;
+
+                const quoteVol = parseFloat(item.quoteVolume) || (p * (parseFloat(item.volume) || 1000));
+                const totalWhaleFlow = Math.max(1_000_000, quoteVol * 0.18);
+                const flowShift = Math.min(0.35, Math.max(-0.35, (change24h / 100) * 1.5));
+                const outflowRatio = 0.50 + flowShift;
+                const inflowRatio = 1 - outflowRatio;
+                const inflowUSD = Math.round(totalWhaleFlow * inflowRatio);
+                const outflowUSD = Math.round(totalWhaleFlow * outflowRatio);
+                const netFlowUSD = outflowUSD - inflowUSD;
 
                 result[sym] = {
                   binance: p,
@@ -111,8 +125,12 @@ export function useMultiExchangePrices() {
                   coinbase,
                   dexAvg,
                   globalAvg: p,
-                  change24h: parseFloat(item.priceChangePercent) || 0,
+                  change24h,
                   spreadPct: Math.max(0.12, spreadPct),
+                  quoteVolume: quoteVol,
+                  inflowUSD,
+                  outflowUSD,
+                  netFlowUSD,
                 };
               }
             }

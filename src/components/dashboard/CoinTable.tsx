@@ -184,7 +184,7 @@ export function CoinTable({
                           <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono whitespace-nowrap shrink-0">
                             {token.category}
                           </span>
-                          <CapBadge symbol={token.symbol} className="whitespace-nowrap shrink-0" />
+                          <CapBadge symbol={token.symbol} basePrice={token.basePrice} className="whitespace-nowrap shrink-0" />
                           <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
                             RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
                           </span>
@@ -417,7 +417,7 @@ export function CoinTable({
                             <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">
                               {token.category}
                             </span>
-                            <CapBadge symbol={token.symbol} />
+                            <CapBadge symbol={token.symbol} basePrice={token.basePrice} />
                           </div>
                         </div>
                       </div>

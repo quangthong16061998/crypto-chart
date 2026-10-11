@@ -3,14 +3,13 @@ import { connection } from "next/server";
 import { fetchWhaleTransactions } from "@/lib/api/crypto";
 import { generateSimulatedWhaleTx } from "@/lib/mockData";
 
-// Cache kết quả giao dịch cá mập 30 giây để giảm tải serverless (Tương thích Next.js 16 cacheComponents)
-
 /**
  * Route Handler: /api/whale
  * Trả về danh sách giao dịch cá mập gần nhất và hỗ trợ tạo giao dịch realtime mô phỏng
  */
 export async function GET(request: Request) {
   try {
+    await connection();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
 

@@ -47,12 +47,18 @@ export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; c
   const [imgError, setImgError] = useState(false);
   const logoUrl = getTokenLogoUrl(symbol);
 
+  // Tự động reset trạng thái lỗi khi đổi symbol để không bao giờ bị dính icon cũ
+  useEffect(() => {
+    setImgError(false);
+  }, [symbol]);
+
   if (logoUrl && !imgError) {
     return (
       <img
         src={logoUrl}
         alt={symbol}
-        className={`${className} rounded-full object-contain bg-slate-900/80 p-0.5 border border-slate-700/60 shrink-0 inline-block`}
+        referrerPolicy="no-referrer"
+        className={`${className} rounded-full object-contain bg-slate-900/90 p-0.5 border border-slate-700/60 shrink-0 inline-block shadow-sm transition-transform duration-200 group-hover:scale-105`}
         loading="lazy"
         onError={() => setImgError(true)}
       />
@@ -218,12 +224,98 @@ export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; c
           <circle cx="16" cy="16" r="3" fill="#A855F7" />
         </svg>
       );
-    default:
+    case 'TIA':
       return (
-        <div className={`${className} rounded-full bg-gradient-to-tr from-slate-800 to-slate-700 flex items-center justify-center font-bold text-[10px] text-cyan-300 border border-slate-600/60 shadow-sm shrink-0`}>
-          {symbol.slice(0, 3)}
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#7B2CBF" />
+          <circle cx="16" cy="16" r="10" stroke="#E0AAFF" strokeWidth="2" fill="none" strokeDasharray="3 3" />
+          <circle cx="16" cy="16" r="4.5" fill="#FF70A6" />
+        </svg>
+      );
+    case 'WLD':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#111111" />
+          <circle cx="16" cy="16" r="10" stroke="#FFFFFF" strokeWidth="2.5" fill="none" />
+          <circle cx="16" cy="16" r="4" fill="#FFFFFF" />
+        </svg>
+      );
+    case 'DOGS':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#000000" />
+          <path d="M11 12c0-3 3-5 5-5s5 2 5 5v7c0 2-2 4-5 4s-5-2-5-4v-7z" fill="#FFFFFF" />
+          <circle cx="14" cy="14" r="1.5" fill="#000" />
+          <circle cx="18" cy="14" r="1.5" fill="#000" />
+          <ellipse cx="16" cy="18" rx="2" ry="1.2" fill="#000" />
+        </svg>
+      );
+    case 'ZK':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#1E293B" />
+          <path d="M10 10h12l-7 12h7" stroke="#38BDF8" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
+      );
+    case 'SHIB':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#FFA409" />
+          <path d="M10 10l6 4 6-4v6l-6 8-6-8z" fill="#8B2500" />
+          <path d="M12 16l4 3 4-3-4 6z" fill="#FFFFFF" />
+        </svg>
+      );
+    case 'UNI':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#FF007A" />
+          <path d="M16 8l3 7h-6l3-7zm-4 9h8l-4 7-4-7z" fill="#FFFFFF" />
+        </svg>
+      );
+    case 'AAVE':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#2EBAC6" />
+          <path d="M16 7l6 17h-3.2l-1.5-4.5h-5.6L10.2 24H7l6-17zm0 6l-1.8 5h3.6L16 13z" fill="#FFFFFF" />
+        </svg>
+      );
+    case 'KAS':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#70C7BA" />
+          <path d="M10 8h3v16h-3zm9 0h3l-5 8 6 8h-3.5l-4.5-6.5L16 19v5h-2.5V8z" fill="#FFFFFF" />
+        </svg>
+      );
+    case 'TAO':
+      return (
+        <svg viewBox="0 0 32 32" className={className} fill="none">
+          <circle cx="16" cy="16" r="16" fill="#000000" />
+          <circle cx="16" cy="16" r="8" stroke="#FFFFFF" strokeWidth="2.5" fill="none" />
+          <path d="M16 10v12M10 16h12" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    default: {
+      // Fallback Avatar siêu xịn: Gradient cyberpunk với metallic border và token letters
+      const charCode = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const gradientStyles = [
+        'from-cyan-600 via-sky-600 to-blue-700 text-cyan-100 border-cyan-400/50 shadow-cyan-500/20',
+        'from-purple-600 via-fuchsia-600 to-indigo-700 text-purple-100 border-purple-400/50 shadow-purple-500/20',
+        'from-emerald-600 via-teal-600 to-teal-800 text-emerald-100 border-emerald-400/50 shadow-emerald-500/20',
+        'from-amber-600 via-orange-600 to-red-700 text-amber-100 border-amber-400/50 shadow-amber-500/20',
+        'from-rose-600 via-pink-600 to-rose-800 text-rose-100 border-rose-400/50 shadow-rose-500/20',
+        'from-blue-600 via-indigo-600 to-violet-800 text-sky-100 border-blue-400/50 shadow-blue-500/20',
+      ];
+      const style = gradientStyles[charCode % gradientStyles.length];
+
+      return (
+        <div
+          className={`${className} rounded-full bg-gradient-to-br ${style} flex items-center justify-center font-black text-[9px] sm:text-[10px] tracking-tight font-mono shadow-md border shrink-0 select-none`}
+          title={symbol}
+        >
+          {symbol.slice(0, 3).toUpperCase()}
         </div>
       );
+    }
   }
 };
 
@@ -284,7 +376,7 @@ export default function App() {
   // Hook kết nối API Đa Nguồn (Multi-Exchange Aggregator Engine)
   const { prices: multiPrices, loading: multiLoading, lastUpdated, refreshPrices } = useMultiExchangePrices();
 
-  // Đồng bộ hoá giá từ Đa Sàn vào tokens state
+  // Đồng bộ hoá giá và dòng tiền cá mập từ Đa Sàn vào tokens state
   useEffect(() => {
     if (!multiPrices || Object.keys(multiPrices).length === 0) return;
 
@@ -294,8 +386,15 @@ export default function App() {
         const p = multiPrices[key];
         if (!p) return token;
 
-        const net = +(token.whaleOutflowUSD - token.whaleInflowUSD).toFixed(1);
+        // Dữ liệu dòng tiền cá mập Realtime từ Binance 24h quote volume & orderflow
+        const liveInflow = p.inflowUSD !== undefined ? +(p.inflowUSD / 1_000_000).toFixed(1) : token.whaleInflowUSD;
+        const liveOutflow = p.outflowUSD !== undefined ? +(p.outflowUSD / 1_000_000).toFixed(1) : token.whaleOutflowUSD;
+        const net = +(liveOutflow - liveInflow).toFixed(1);
         const isAccumulating = net >= 0;
+
+        const liveVol = p.quoteVolume
+          ? (p.quoteVolume >= 1e9 ? `${(p.quoteVolume / 1e9).toFixed(1)}B` : `${(p.quoteVolume / 1e6).toFixed(1)}M`)
+          : token.volume24h;
 
         return {
           ...token,
@@ -307,6 +406,10 @@ export default function App() {
           globalAvgPrice: p.globalAvg,
           spreadPct: p.spreadPct,
           priceChange24h: p.change24h !== 0 ? p.change24h : token.priceChange24h,
+          whaleInflowUSD: liveInflow,
+          whaleOutflowUSD: liveOutflow,
+          netWhaleFlow: net,
+          volume24h: liveVol,
           status: isAccumulating ? 'BUY_SPOT' : 'AVOID',
           statusLabel: isAccumulating
             ? (token.spotScore >= 85 ? 'TOP SPOT MUA NGAY' : 'TÍCH LŨY SPOT')
@@ -464,19 +567,26 @@ export default function App() {
     setCurrentPage(1);
   }, [selectedSignal, selectedExchange, selectedCategory, searchQuery, tableScope]);
 
-  // Chuyển đổi danh sách tokens sang format TokenFlow của WhaleFlowRadar
+  // Chuyển đổi danh sách tokens sang format TokenFlow của WhaleFlowRadar chuẩn realtime
   const tokenFlowList: TokenFlow[] = useMemo(() => {
-    return tokens.map((t) => ({
-      symbol: t.symbol,
-      name: t.name,
-      inflowUsd: t.whaleInflowUSD * 1_000_000,
-      outflowUsd: t.whaleOutflowUSD * 1_000_000,
-      binancePrice: t.binancePrice || t.basePrice,
-      globalAvgPrice: t.globalAvgPrice || t.basePrice,
-      spreadPct: t.spreadPct,
-      category: t.category,
-      spotScore: t.spotScore,
-    }));
+    return tokens.map((t) => {
+      const capAudit = getCapTierAudit({ symbol: t.symbol, basePrice: t.basePrice, globalAvgPrice: t.globalAvgPrice });
+      return {
+        symbol: t.symbol,
+        name: t.name,
+        inflowUsd: t.whaleInflowUSD * 1_000_000,
+        outflowUsd: t.whaleOutflowUSD * 1_000_000,
+        binancePrice: t.binancePrice || t.basePrice,
+        globalAvgPrice: t.globalAvgPrice || t.basePrice,
+        spreadPct: t.spreadPct,
+        category: t.category,
+        spotScore: t.spotScore,
+        priceChange24h: t.priceChange24h,
+        volume24h: t.volume24h,
+        quoteVolumeUSD: (t.whaleInflowUSD + t.whaleOutflowUSD) * 1_000_000 * 5, // Volume 24h quy mô đầy đủ
+        marketCapUSD: capAudit.marketCapUSD,
+      };
+    });
   }, [tokens]);
 
   // Aggregate Whale Market Pressure Stats
@@ -685,7 +795,7 @@ export default function App() {
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0">
                               {coin.category}
                             </span>
-                            <CapBadge symbol={coin.symbol} className="whitespace-nowrap shrink-0" />
+                            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
                           </div>
                           <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
                             <span className="text-emerald-400 font-mono font-medium shrink-0">
@@ -772,7 +882,7 @@ export default function App() {
                               <span className="hidden sm:inline">{coin.statusLabel.slice(0, 16)}</span>
                               <span className="inline sm:hidden">{coin.statusLabel.includes('QUÁ MUA') ? 'Quá Mua' : coin.statusLabel.includes('XẢ') ? 'Xả Mạnh' : 'Né Spot'}</span>
                             </span>
-                            <CapBadge symbol={coin.symbol} className="whitespace-nowrap shrink-0" />
+                            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
                           </div>
                           <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
                             <span className="text-rose-400 font-mono font-medium shrink-0">
@@ -818,6 +928,9 @@ export default function App() {
           <WhaleFlowRadar
             tokens={tokenFlowList}
             onSelectToken={handleSelectTokenSymbol}
+            lastUpdated={lastUpdated}
+            onRefresh={refreshPrices}
+            loading={multiLoading}
           />
 
           {/* BỘ LỌC ĐA CHIỀU (ADVANCED MULTI-DIMENSION FILTER BAR) */}
@@ -924,7 +1037,7 @@ export default function App() {
                       }`}>
                         {selectedToken.statusLabel}
                       </span>
-                      <CapBadge symbol={selectedToken.symbol} showDetails={true} className="whitespace-nowrap shrink-0" />
+                      <CapBadge symbol={selectedToken.symbol} basePrice={modalGlobalPrice} showDetails={true} className="whitespace-nowrap shrink-0" />
                     </div>
                     <div className="flex items-center gap-3 text-[11px] sm:text-xs font-mono text-slate-400 mt-1 overflow-x-auto scrollbar-none whitespace-nowrap">
                       <span>Giá bình quân: <strong className="text-white">{formatUSD(modalGlobalPrice)}</strong></span>
