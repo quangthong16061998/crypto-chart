@@ -27,43 +27,47 @@ export function CapTierModalSection({ audit, tokenSymbol }: CapTierModalSectionP
   const tiers: {
     id: CapTier;
     label: string;
+    shortLabel: string;
     range: string;
+    shortRange: string;
     desc: string;
     color: 'rose' | 'orange' | 'amber' | 'emerald' | 'cyan';
   }[] = [
-    { id: 'SUPER_LOW_CAP', label: 'Super Low Cap', range: '< $10M', desc: 'Dễ x10-x50, rủi ro Rug/Dump 95%', color: 'rose' },
-    { id: 'MICRO_CAP', label: 'Micro Cap', range: '$10M - $100M', desc: 'Thanh khoản mỏng, dễ bị đẩy/xả', color: 'orange' },
-    { id: 'SMALL_CAP', label: 'Small Cap', range: '$100M - $1B', desc: 'Tăng 2-5x nhanh, áp lực xả cao', color: 'amber' },
-    { id: 'MID_CAP', label: 'Mid Cap', range: '$1B - $10B', desc: 'Nền tảng L1/L2, tăng trưởng tốt', color: 'emerald' },
-    { id: 'MEGA_CAP', label: 'Mega Cap', range: '> $10B', desc: 'Thanh khoản sâu, an toàn nhất', color: 'cyan' },
+    { id: 'SUPER_LOW_CAP', label: 'Super Low Cap', shortLabel: 'Super Low', range: '< $10M', shortRange: '< $10M', desc: 'Dễ x10-x50, rủi ro Rug/Dump 95%', color: 'rose' },
+    { id: 'MICRO_CAP', label: 'Micro Cap', shortLabel: 'Micro', range: '$10M - $100M', shortRange: '$10M-100M', desc: 'Thanh khoản mỏng, dễ bị đẩy/xả', color: 'orange' },
+    { id: 'SMALL_CAP', label: 'Small Cap', shortLabel: 'Small', range: '$100M - $1B', shortRange: '$100M-1B', desc: 'Tăng 2-5x nhanh, áp lực xả cao', color: 'amber' },
+    { id: 'MID_CAP', label: 'Mid Cap', shortLabel: 'Mid', range: '$1B - $10B', shortRange: '$1B-10B', desc: 'Nền tảng L1/L2, tăng trưởng tốt', color: 'emerald' },
+    { id: 'MEGA_CAP', label: 'Mega Cap', shortLabel: 'Mega', range: '> $10B', shortRange: '> $10B', desc: 'Thanh khoản sâu, an toàn nhất', color: 'cyan' },
   ];
 
   return (
-    <div className="rounded-2xl bg-gradient-to-b from-[#0D1326] via-[#090E1C] to-[#070A14] border border-slate-800 p-4 sm:p-5 shadow-2xl space-y-4">
+    <div className="rounded-2xl bg-gradient-to-b from-[#0D1326] via-[#090E1C] to-[#070A14] border border-slate-800 p-3.5 sm:p-5 shadow-2xl space-y-3.5 sm:space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800/80">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 text-cyan-400 border border-cyan-500/30 shrink-0">
-            <Coins className="w-5 h-5 animate-pulse" />
+            <Coins className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
           </div>
-          <div>
-            <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white flex items-center gap-2 flex-wrap">
-              PHÂN KHÚC VỐN HÓA & ĐỘ SÂU THANH KHOẢN (CAP AUDIT)
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/40">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h4 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white whitespace-nowrap">
+                PHÂN KHÚC VỐN HÓA (CAP AUDIT)
+              </h4>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-mono border border-cyan-500/40 whitespace-nowrap shrink-0">
                 {audit.badgeLabel}
               </span>
-            </h4>
-            <p className="text-[11px] text-slate-400">
-              Công thức: <strong className="text-slate-300">Market Cap = Giá × Lượng lưu hành</strong> • Đối soát bẫy thanh khoản & trượt giá
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
+              Công thức: <strong className="text-slate-300">Market Cap = Giá × Lượng lưu hành</strong> • Đối soát bẫy thanh khoản
             </p>
           </div>
         </div>
 
         {/* Risk Badge */}
         <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0">
-          <span className="text-[11px] text-slate-400 font-medium">Mức độ rủi ro:</span>
+          <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden xs:inline">Rủi ro:</span>
           <span
-            className={`text-xs px-2.5 py-1 rounded-lg font-extrabold border flex items-center gap-1 font-mono ${
+            className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-lg font-extrabold border flex items-center gap-1 font-mono whitespace-nowrap shrink-0 ${
               audit.tier === 'MEGA_CAP'
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                 : audit.tier === 'MID_CAP'
@@ -90,8 +94,8 @@ export function CapTierModalSection({ audit, tokenSymbol }: CapTierModalSectionP
       {/* 5-TIER SPECTRUM VISUAL (Thanh đo 5 nấc phân khúc vốn hóa) */}
       <div className="space-y-1.5">
         <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
-          <span>Phân khúc Vốn Hóa Thị Trường (Crypto Market Cap Spectrum):</span>
-          <span className="text-cyan-300 font-bold">Vốn hóa: {audit.marketCapFormatted}</span>
+          <span className="truncate">Thước đo Vốn Hóa (Market Cap Spectrum):</span>
+          <span className="text-cyan-300 font-bold whitespace-nowrap shrink-0">Cap: {audit.marketCapFormatted}</span>
         </div>
 
         <div className="grid grid-cols-5 gap-1 p-1 rounded-xl bg-slate-950 border border-slate-800 text-[10px] font-mono">
@@ -100,7 +104,7 @@ export function CapTierModalSection({ audit, tokenSymbol }: CapTierModalSectionP
             return (
               <div
                 key={t.id}
-                className={`relative p-2 rounded-lg text-center transition-all duration-300 flex flex-col justify-between ${
+                className={`relative p-1.5 sm:p-2 rounded-lg text-center transition-all duration-300 flex flex-col justify-between ${
                   isCurrent
                     ? t.color === 'rose'
                       ? 'bg-rose-950/80 text-rose-200 border-2 border-rose-500 shadow-lg shadow-rose-950/50 font-bold scale-[1.02] z-10'
@@ -115,13 +119,19 @@ export function CapTierModalSection({ audit, tokenSymbol }: CapTierModalSectionP
                 }`}
               >
                 {isCurrent && (
-                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded-full bg-white text-slate-950 text-[8px] font-extrabold shadow uppercase whitespace-nowrap">
-                    ĐANG Ở ĐÂY
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1 py-0.2 rounded-full bg-white text-slate-950 text-[7px] sm:text-[8px] font-extrabold shadow uppercase whitespace-nowrap">
+                    Ở ĐÂY
                   </span>
                 )}
                 <div>
-                  <span className="block truncate text-[10px] sm:text-[11px] font-extrabold">{t.label}</span>
-                  <span className="block text-[9px] opacity-75">{t.range}</span>
+                  <span className="block truncate text-[9px] sm:text-[11px] font-extrabold whitespace-nowrap">
+                    <span className="hidden sm:inline">{t.label}</span>
+                    <span className="inline sm:hidden">{t.shortLabel}</span>
+                  </span>
+                  <span className="block text-[8px] sm:text-[9px] opacity-75 whitespace-nowrap truncate">
+                    <span className="hidden sm:inline">{t.range}</span>
+                    <span className="inline sm:hidden">{t.shortRange}</span>
+                  </span>
                 </div>
               </div>
             );

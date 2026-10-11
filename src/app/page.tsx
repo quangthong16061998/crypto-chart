@@ -579,8 +579,8 @@ export default function App() {
                     TOP 100 CRYPTO 2026
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Radar Dòng Tiền Cá Mập On-Chain & Đối Soát Giá Đa Sàn (Top 100 Đồng Coin Mạnh Nhất)
+                <p className="text-[11px] text-slate-400 truncate max-w-[240px] xs:max-w-none">
+                  Radar Dòng Tiền Cá Mập On-Chain & Đối Soát Đa Sàn (Top 100 Coin)
                 </p>
               </div>
             </div>
@@ -665,8 +665,8 @@ export default function App() {
                       onClick={() => setSelectedToken(coin)}
                       className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-emerald-900/40 hover:border-emerald-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-950/40 flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative shrink-0">
                           <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full font-bold text-[10px] flex items-center justify-center border ${
                             index < 3
                               ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
@@ -676,23 +676,23 @@ export default function App() {
                           </span>
                           <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-white group-hover:text-cyan-300 transition-colors text-xs sm:text-sm">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-nowrap">
+                            <span className="font-bold text-white group-hover:text-cyan-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
                               {coin.name}
                             </span>
-                            <span className="text-xs font-mono text-slate-400">({coin.symbol})</span>
-                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0">
                               {coin.category}
                             </span>
-                            <CapBadge symbol={coin.symbol} />
+                            <CapBadge symbol={coin.symbol} className="whitespace-nowrap shrink-0" />
                           </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                            <span className="text-emerald-400 font-mono font-medium">
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
+                            <span className="text-emerald-400 font-mono font-medium shrink-0">
                               Rút ví: +${coin.whaleOutflowUSD}M
                             </span>
                             <span>•</span>
-                            <span>RSI: {coin.rsi}</span>
+                            <span className="shrink-0">RSI: {coin.rsi}</span>
                           </div>
                         </div>
                       </div>
@@ -755,30 +755,31 @@ export default function App() {
                       onClick={() => setSelectedToken(coin)}
                       className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-rose-900/40 hover:border-rose-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-rose-950/40 flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative shrink-0">
                           <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-rose-950 text-rose-300 font-bold text-[10px] flex items-center justify-center border border-rose-600/50">
                             #{index + 1}
                           </span>
                           <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-white group-hover:text-rose-300 transition-colors text-xs sm:text-sm">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-nowrap">
+                            <span className="font-bold text-white group-hover:text-rose-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
                               {coin.name}
                             </span>
-                            <span className="text-xs font-mono text-slate-400">({coin.symbol})</span>
-                            <span className="bg-rose-500/20 text-rose-400 text-[9px] px-1.5 py-0.2 rounded border border-rose-500/30 font-bold">
-                              {coin.statusLabel.slice(0, 16)}
+                            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
+                            <span className="bg-rose-500/20 text-rose-400 text-[9px] px-1.5 py-0.5 rounded border border-rose-500/30 font-bold whitespace-nowrap shrink-0">
+                              <span className="hidden sm:inline">{coin.statusLabel.slice(0, 16)}</span>
+                              <span className="inline sm:hidden">{coin.statusLabel.includes('QUÁ MUA') ? 'Quá Mua' : coin.statusLabel.includes('XẢ') ? 'Xả Mạnh' : 'Né Spot'}</span>
                             </span>
-                            <CapBadge symbol={coin.symbol} />
+                            <CapBadge symbol={coin.symbol} className="whitespace-nowrap shrink-0" />
                           </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                            <span className="text-rose-400 font-mono font-medium">
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
+                            <span className="text-rose-400 font-mono font-medium shrink-0">
                               Nạp xả: -${coin.whaleInflowUSD}M
                             </span>
                             <span>•</span>
-                            <span className={coin.rsi > 70 ? 'text-amber-400 font-bold' : ''}>
+                            <span className={`shrink-0 ${coin.rsi > 70 ? 'text-amber-400 font-bold' : ''}`}>
                               RSI: {coin.rsi}
                             </span>
                           </div>
@@ -896,52 +897,56 @@ export default function App() {
           });
 
           return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div
-                className="relative w-full max-w-2xl bg-[#0B0F1D] border border-slate-700/80 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto space-y-5"
+                className="relative w-full max-w-2xl bg-[#0B0F1D] border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-5"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Close Button */}
                 <button
                   onClick={() => setSelectedToken(null)}
-                  className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors z-20"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
                 {/* Modal Header */}
-                <div className="flex items-center gap-3.5 pb-4 border-b border-slate-800">
-                  <TokenIcon symbol={selectedToken.symbol} className="w-12 h-12" />
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-xl font-black text-white">{selectedToken.name}</h3>
-                      <span className="text-sm font-mono text-slate-400 font-bold">({selectedToken.symbol})</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-md font-bold border ${
+                <div className="flex items-center gap-3 pb-3.5 border-b border-slate-800 pr-9">
+                  <TokenIcon symbol={selectedToken.symbol} className="w-10 h-10 sm:w-12 sm:h-12 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="text-lg sm:text-xl font-black text-white truncate max-w-[130px] sm:max-w-none">{selectedToken.name}</h3>
+                      <span className="text-xs sm:text-sm font-mono text-slate-400 font-bold shrink-0">({selectedToken.symbol})</span>
+                      <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-bold border whitespace-nowrap shrink-0 ${
                         selectedToken.status === 'BUY_SPOT'
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                           : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                       }`}>
                         {selectedToken.statusLabel}
                       </span>
-                      <CapBadge symbol={selectedToken.symbol} showDetails={true} />
+                      <CapBadge symbol={selectedToken.symbol} showDetails={true} className="whitespace-nowrap shrink-0" />
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-mono text-slate-400 mt-1 flex-wrap">
-                      <span>Giá bình quân: <strong className="text-white text-sm">{formatUSD(modalGlobalPrice)}</strong></span>
-                      <span>24h Change: <strong className={selectedToken.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                    <div className="flex items-center gap-3 text-[11px] sm:text-xs font-mono text-slate-400 mt-1 overflow-x-auto scrollbar-none whitespace-nowrap">
+                      <span>Giá bình quân: <strong className="text-white">{formatUSD(modalGlobalPrice)}</strong></span>
+                      <span>•</span>
+                      <span>24h: <strong className={selectedToken.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                         {selectedToken.priceChange24h >= 0 ? `+${selectedToken.priceChange24h}%` : `${selectedToken.priceChange24h}%`}
                       </strong></span>
+                      <span>•</span>
                       <span>Độ tin cậy: <strong className="text-cyan-400">{selectedToken.confidence}%</strong></span>
                     </div>
                   </div>
                 </div>
 
                 {/* BẢNG ĐỐI SOÁT GIÁ ĐA SÀN & CHÊNH LỆCH SPREAD */}
-                <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 space-y-3">
+                <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 sm:p-4 space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
-                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                      <DollarSign className="w-4 h-4" /> Bảng Đối Soát Giá Đa Sàn (Binance, Coinbase, DEX & VWAP)
+                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 whitespace-nowrap truncate">
+                      <DollarSign className="w-4 h-4 shrink-0" />
+                      <span className="hidden sm:inline">Bảng Đối Soát Giá Đa Sàn (Binance, Coinbase, DEX & VWAP)</span>
+                      <span className="inline sm:hidden">Đối Soát Giá 5 Nền Tảng</span>
                     </span>
-                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0">
                       Spread: <strong className="text-cyan-400">{modalSpreadPct}%</strong>
                     </span>
                   </div>

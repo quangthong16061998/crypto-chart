@@ -22,12 +22,12 @@ export function CapBadge({ symbol, className = '', showDetails = false }: CapBad
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border transition-colors ${colorStyles} ${className}`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border transition-colors whitespace-nowrap shrink-0 ${colorStyles} ${className}`}
       title={`Vốn Hóa: ${audit.marketCapFormatted} (${audit.capRange}) • Rủi ro: ${audit.riskLevel}`}
     >
-      <span>{audit.tier === 'SUPER_LOW_CAP' ? 'Super Low Cap' : audit.tier === 'MEGA_CAP' ? 'Mega Cap' : audit.tier === 'MID_CAP' ? 'Mid Cap' : audit.tier === 'SMALL_CAP' ? 'Small Cap' : 'Micro Cap'}</span>
+      <span className="whitespace-nowrap">{audit.tier === 'SUPER_LOW_CAP' ? 'Super Low Cap' : audit.tier === 'MEGA_CAP' ? 'Mega Cap' : audit.tier === 'MID_CAP' ? 'Mid Cap' : audit.tier === 'SMALL_CAP' ? 'Small Cap' : 'Micro Cap'}</span>
       {showDetails && (
-        <span className="opacity-80">({audit.marketCapFormatted})</span>
+        <span className="opacity-80 whitespace-nowrap">({audit.marketCapFormatted})</span>
       )}
     </span>
   );

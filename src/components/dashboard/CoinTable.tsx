@@ -172,20 +172,20 @@ export function CoinTable({
                       </span>
                       <TokenIcon symbol={token.symbol} className="w-9 h-9 shrink-0 shadow-md rounded-full" />
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-white text-sm group-hover:text-cyan-300 transition-colors truncate">
+                        <div className="flex items-center gap-1.5 flex-nowrap">
+                          <span className="font-extrabold text-white text-sm group-hover:text-cyan-300 transition-colors truncate max-w-[100px] xs:max-w-[140px]">
                             {token.name}
                           </span>
-                          <span className="font-mono text-xs text-slate-400 font-semibold">
+                          <span className="font-mono text-xs text-slate-400 font-semibold shrink-0">
                             {token.symbol}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-800/40 font-mono">
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-nowrap">
+                          <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono whitespace-nowrap shrink-0">
                             {token.category}
                           </span>
-                          <CapBadge symbol={token.symbol} />
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <CapBadge symbol={token.symbol} className="whitespace-nowrap shrink-0" />
+                          <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
                             RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
                           </span>
                         </div>
@@ -267,20 +267,20 @@ export function CoinTable({
                   <div className="flex items-center justify-between gap-2 pt-1">
                     {/* Spread badge */}
                     {isHighSpread ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[10px] font-extrabold shadow-sm shadow-amber-500/10">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[10px] font-extrabold shadow-sm shadow-amber-500/10 whitespace-nowrap shrink-0">
                         <Zap className="w-3 h-3 text-amber-400 animate-bounce" />
                         Spread ±{token.spreadPct}%
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-mono">
+                      <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
                         Spread: ±{token.spreadPct ?? 0.12}%
                       </span>
                     )}
 
                     {/* Spot Recommendation Badge */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className={`text-[11px] px-2.5 py-1 rounded-xl font-extrabold border flex items-center gap-1 shadow-md ${
+                        className={`text-[10px] xs:text-[11px] px-2 py-0.5 rounded-xl font-extrabold border flex items-center gap-1 shadow-md whitespace-nowrap shrink-0 ${
                           isBuy
                             ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
                             : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10'
@@ -291,13 +291,13 @@ export function CoinTable({
                         ) : (
                           <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                         )}
-                        <span className="truncate max-w-[130px]">{token.statusLabel}</span>
-                        <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-950/80 text-white font-bold ml-0.5 border border-slate-700">
+                        <span className="truncate max-w-[100px] xs:max-w-[130px] whitespace-nowrap">{token.statusLabel}</span>
+                        <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-950/80 text-white font-bold ml-0.5 border border-slate-700 shrink-0">
                           {token.spotScore}
                         </span>
                       </span>
 
-                      <span className="text-[11px] text-cyan-400 font-bold group-hover:underline flex items-center shrink-0">
+                      <span className="text-[11px] text-cyan-400 font-bold group-hover:underline flex items-center shrink-0 whitespace-nowrap">
                         Chi tiết ➔
                       </span>
                     </div>
