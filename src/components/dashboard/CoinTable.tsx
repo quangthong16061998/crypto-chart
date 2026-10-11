@@ -25,6 +25,7 @@ import {
 import { TokenItem, TokenIcon } from '@/app/page';
 import { ExchangeFilter } from './MarketFilters';
 import { formatCryptoPrice, getDecimalsForPrice } from '@/lib/priceFormatter';
+import { CapBadge } from './CapBadge';
 
 interface CoinTableProps {
   tokens: TokenItem[];
@@ -179,10 +180,11 @@ export function CoinTable({
                             {token.symbol}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                           <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-800/40 font-mono">
                             {token.category}
                           </span>
+                          <CapBadge symbol={token.symbol} />
                           <span className="text-[10px] text-slate-400 font-mono">
                             RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
                           </span>
@@ -411,9 +413,12 @@ export function CoinTable({
                               {token.symbol}
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">
-                            {token.category}
-                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">
+                              {token.category}
+                            </span>
+                            <CapBadge symbol={token.symbol} />
+                          </div>
                         </div>
                       </div>
                     </td>

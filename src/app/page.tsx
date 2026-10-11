@@ -38,6 +38,9 @@ import { formatCryptoPrice, getDecimalsForPrice } from '@/lib/priceFormatter';
 import { getTokenLogoUrl } from '@/config/tokenLogos';
 import { MarketFilters, ExchangeFilter, SignalFilter, SortOption } from '@/components/dashboard/MarketFilters';
 import { CoinTable } from '@/components/dashboard/CoinTable';
+import { getCapTierAudit } from '@/lib/capTierEngine';
+import { CapTierModalSection } from '@/components/dashboard/CapTierModalSection';
+import { CapBadge } from '@/components/dashboard/CapBadge';
 
 // High-fidelity crypto logos with official CDN avatar support and crisp vector SVG fallback
 export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; className?: string }) => {
@@ -682,6 +685,7 @@ export default function App() {
                             <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700">
                               {coin.category}
                             </span>
+                            <CapBadge symbol={coin.symbol} />
                           </div>
                           <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                             <span className="text-emerald-400 font-mono font-medium">
@@ -767,6 +771,7 @@ export default function App() {
                             <span className="bg-rose-500/20 text-rose-400 text-[9px] px-1.5 py-0.2 rounded border border-rose-500/30 font-bold">
                               {coin.statusLabel.slice(0, 16)}
                             </span>
+                            <CapBadge symbol={coin.symbol} />
                           </div>
                           <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                             <span className="text-rose-400 font-mono font-medium">
@@ -882,6 +887,14 @@ export default function App() {
             ? `${formatUSD(livePrice * 1.15)} - ${formatUSD(livePrice * 1.28)} (+15% ~ +28%)`
             : 'N/A (Đứng ngoài)';
 
+          // Tính toán kiểm tra phân khúc Vốn Hóa & Độ sâu thanh khoản
+          const capAudit = getCapTierAudit({
+            symbol: selectedToken.symbol,
+            name: selectedToken.name,
+            basePrice: livePrice,
+            globalAvgPrice: modalGlobalPrice,
+          });
+
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
               <div
@@ -900,7 +913,7 @@ export default function App() {
                 <div className="flex items-center gap-3.5 pb-4 border-b border-slate-800">
                   <TokenIcon symbol={selectedToken.symbol} className="w-12 h-12" />
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-xl font-black text-white">{selectedToken.name}</h3>
                       <span className="text-sm font-mono text-slate-400 font-bold">({selectedToken.symbol})</span>
                       <span className={`text-xs px-2 py-0.5 rounded-md font-bold border ${
@@ -910,8 +923,9 @@ export default function App() {
                       }`}>
                         {selectedToken.statusLabel}
                       </span>
+                      <CapBadge symbol={selectedToken.symbol} showDetails={true} />
                     </div>
-                    <div className="flex items-center gap-4 text-xs font-mono text-slate-400 mt-1">
+                    <div className="flex items-center gap-4 text-xs font-mono text-slate-400 mt-1 flex-wrap">
                       <span>Giá bình quân: <strong className="text-white text-sm">{formatUSD(modalGlobalPrice)}</strong></span>
                       <span>24h Change: <strong className={selectedToken.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
                         {selectedToken.priceChange24h >= 0 ? `+${selectedToken.priceChange24h}%` : `${selectedToken.priceChange24h}%`}
@@ -963,6 +977,9 @@ export default function App() {
                     *Đối soát chéo đa sàn loại bỏ độ lệch giá đơn lẻ, giúp xác định chuẩn xác vùng giá gom/xả và hạn chế trượt giá (Slippage).
                   </p>
                 </div>
+
+                {/* PHÂN TÍCH PHÂN KHÚC VỐN HÓA & ĐỘ SÂU THANH KHOẢN (CAP AUDIT) */}
+                <CapTierModalSection audit={capAudit} tokenSymbol={selectedToken.symbol} />
 
                 {/* DUAL-SIDED AUDIT COMPARISON METER IN MODAL */}
                 <div className="rounded-xl bg-slate-900/80 border border-slate-800 p-4 space-y-3">
