@@ -1,22 +1,28 @@
 import { NextResponse } from "next/server";
-import { connection } from "next/server";
 
-// Cache in-memory trên server 10 giây để chống rate limit
+// Cache in-memory trên server 30 giây để chống dính 429 Rate Limit trên gói Free (Tương thích Next.js 16 cacheComponents)
+
+// Cache in-memory trên server 30 giây để chống dính Rate Limit trên gói Free
 let cachedPrices: Record<string, any> | null = null;
 let lastFetchTime = 0;
-const CACHE_TTL_MS = 10 * 1000;
+const CACHE_TTL_MS = 30 * 1000;
 
 export async function GET() {
-  await connection();
-
   const now = Date.now();
   if (cachedPrices && now - lastFetchTime < CACHE_TTL_MS) {
-    return NextResponse.json({
-      success: true,
-      prices: cachedPrices,
-      timestamp: lastFetchTime,
-      source: "cache",
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        prices: cachedPrices,
+        timestamp: lastFetchTime,
+        source: "cache",
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      }
+    );
   }
 
   try {
@@ -121,12 +127,19 @@ export async function GET() {
     cachedPrices = finalPrices;
     lastFetchTime = now;
 
-    return NextResponse.json({
-      success: true,
-      prices: finalPrices,
-      timestamp: now,
-      source: "live_binance_aggregator",
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        prices: finalPrices,
+        timestamp: now,
+        source: "live_binance_aggregator",
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      }
+    );
   } catch (error) {
     console.error("Lỗi trong API /api/prices:", error);
     return NextResponse.json(

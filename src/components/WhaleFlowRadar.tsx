@@ -185,18 +185,20 @@ export function WhaleFlowRadar({ tokens, onSelectToken }: WhaleFlowRadarProps) {
               className="bg-slate-900/60 hover:bg-slate-800/70 p-3.5 rounded-xl border border-slate-800/80 hover:border-cyan-500/40 transition-all cursor-pointer group"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2.5 gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-mono text-slate-500 font-bold w-5">
-                    #{index + 1}
-                  </span>
-                  <TokenIcon symbol={token.symbol} className="w-6 h-6" />
-                  <span className="font-extrabold text-white text-sm uppercase group-hover:text-cyan-300 transition-colors">
-                    {token.symbol}
-                  </span>
-                  <span className="text-xs text-slate-400">({token.name})</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-slate-500 font-bold w-5">
+                      #{index + 1}
+                    </span>
+                    <TokenIcon symbol={token.symbol} className="w-6 h-6" />
+                    <span className="font-extrabold text-white text-sm uppercase group-hover:text-cyan-300 transition-colors">
+                      {token.symbol}
+                    </span>
+                    <span className="text-xs text-slate-400">({token.name})</span>
+                  </div>
 
                   {/* Multi-Exchange Price Comparison Badges */}
-                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px]">
                     <span className="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/60">
                       Binance: <strong className="text-white">{formatPrice(token.binancePrice)}</strong>
                     </span>

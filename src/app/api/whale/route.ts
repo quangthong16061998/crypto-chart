@@ -3,14 +3,13 @@ import { connection } from "next/server";
 import { fetchWhaleTransactions } from "@/lib/api/crypto";
 import { generateSimulatedWhaleTx } from "@/lib/mockData";
 
+// Cache kết quả giao dịch cá mập 30 giây để giảm tải serverless (Tương thích Next.js 16 cacheComponents)
+
 /**
  * Route Handler: /api/whale
  * Trả về danh sách giao dịch cá mập gần nhất và hỗ trợ tạo giao dịch realtime mô phỏng
  */
 export async function GET(request: Request) {
-  // Chờ incoming user request, dừng static prerendering
-  await connection();
-
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
@@ -42,21 +41,28 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        transactions,
-        stats: {
-          total_transactions: transactions.length,
-          inflow_usd: inflowUSD,
-          outflow_usd: outflowUSD,
-          net_flow_usd: outflowUSD - inflowUSD, // Dương = Tích lũy ròng
-          dump_alerts_count: dumpAlertsCount,
-          accumulation_count: accumulationCount,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          transactions,
+          stats: {
+            total_transactions: transactions.length,
+            inflow_usd: inflowUSD,
+            outflow_usd: outflowUSD,
+            net_flow_usd: outflowUSD - inflowUSD, // Dương = Tích lũy ròng
+            dump_alerts_count: dumpAlertsCount,
+            accumulation_count: accumulationCount,
+          },
         },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error in /api/whale route handler:", error);
     return NextResponse.json(

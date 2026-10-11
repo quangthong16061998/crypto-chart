@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -16,7 +16,11 @@ import {
   ArrowRightLeft,
   Activity,
   Layers,
-  Sparkles
+  Sparkles,
+  Eye,
+  SlidersHorizontal,
+  Smartphone,
+  Table as TableIcon
 } from 'lucide-react';
 import { TokenItem, TokenIcon } from '@/app/page';
 import { ExchangeFilter } from './MarketFilters';
@@ -47,6 +51,9 @@ export function CoinTable({
   totalItems,
   tableScope,
 }: CoinTableProps) {
+  // Chế độ hiển thị trên Mobile: 'cards' (Thẻ Pro vuốt dọc trực quan) hoặc 'table' (Bảng vuốt ngang truyền thống)
+  const [mobileView, setMobileView] = useState<'cards' | 'table'>('cards');
+
   const getExchangeHighlightClass = (exchange: 'BINANCE' | 'OKX' | 'COINBASE' | 'DEX') => {
     if (selectedExchange === exchange) {
       return 'bg-cyan-500/10 border-x border-cyan-500/40 text-cyan-200';
@@ -66,9 +73,9 @@ export function CoinTable({
 
   return (
     <div className="rounded-2xl bg-[#090D18]/95 border border-slate-800 shadow-2xl overflow-hidden backdrop-blur-xl">
-      {/* Table Sub-header with Exchange View Status indicator */}
-      <div className="px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
+      {/* Table Sub-header with Exchange View Status indicator and Mobile View Switcher */}
+      <div className="px-4 sm:px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
@@ -76,7 +83,7 @@ export function CoinTable({
           <span className="text-slate-300 font-semibold font-mono uppercase tracking-wider text-[11px]">
             CHẾ ĐỘ ĐỐI SOÁT:
           </span>
-          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-[11px] font-mono">
+          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-[10px] sm:text-[11px] font-mono">
             {selectedExchange === 'ALL'
               ? 'MA TRẬN ĐA SÀN (BINANCE, OKX, COINBASE & DEX)'
               : selectedExchange === 'BINANCE'
@@ -89,13 +96,221 @@ export function CoinTable({
           </span>
         </div>
 
-        <div className="text-slate-400 text-xs font-mono">
-          Hiển thị <strong className="text-white">{startItem} - {endItem}</strong> trên tổng <strong className="text-cyan-400">{totalItems}</strong> đồng coin
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          {/* Nút chuyển đổi giao diện Thẻ Pro vs Bảng trên Mobile */}
+          <div className="flex md:hidden items-center gap-1 bg-slate-900 border border-slate-700/80 p-0.5 rounded-xl shadow-inner">
+            <button
+              onClick={() => setMobileView('cards')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                mobileView === 'cards'
+                  ? 'bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-extrabold shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Smartphone className="w-3 h-3" />
+              <span>Thẻ Pro</span>
+            </button>
+            <button
+              onClick={() => setMobileView('table')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                mobileView === 'table'
+                  ? 'bg-gradient-to-r from-cyan-500 to-teal-400 text-slate-950 font-extrabold shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <TableIcon className="w-3 h-3" />
+              <span>Bảng Vuốt</span>
+            </button>
+          </div>
+
+          <div className="text-slate-400 text-xs font-mono">
+            Hiển thị <strong className="text-white">{startItem} - {endItem}</strong> trên <strong className="text-cyan-400">{totalItems}</strong> coin
+          </div>
         </div>
       </div>
 
-      {/* Main Table Responsive Container */}
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800">
+      {/* ========================================================== */}
+      {/* 1. GIAO DIỆN MOBILE PRO CARD VIEW (Tối ưu cho điện thoại) */}
+      {/* ========================================================== */}
+      {mobileView === 'cards' && (
+        <div className="block md:hidden p-3 space-y-3 bg-[#070A12]/80">
+          {tokens.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 bg-slate-950/60 rounded-2xl border border-slate-800 p-6">
+              <p className="text-sm font-semibold text-slate-300">Không tìm thấy đồng coin phù hợp bộ lọc</p>
+              <p className="text-xs text-slate-500 mt-1">Hãy thử đổi nguồn sàn hoặc xóa bộ lọc tín hiệu.</p>
+            </div>
+          ) : (
+            tokens.map((token, idx) => {
+              const flash = priceFlashMap[token.symbol];
+              const isBuy = token.status === 'BUY_SPOT';
+              const totalFlow = token.whaleInflowUSD + token.whaleOutflowUSD;
+              const inflowPct = totalFlow > 0 ? Math.round((token.whaleInflowUSD / totalFlow) * 100) : 50;
+              const outflowPct = 100 - inflowPct;
+              const rankNumber = (currentPage - 1) * tableScope + idx + 1;
+
+              const livePrice = token.globalAvgPrice || token.basePrice;
+              const decimals = getDecimalsForPrice(livePrice);
+
+              const binanceP = token.binancePrice || livePrice;
+              const okxP = token.okxPrice || Number((livePrice * 1.0002).toFixed(decimals));
+              const coinbaseP = token.coinbasePrice || Number((livePrice * 1.0006).toFixed(decimals));
+              const dexP = token.dexPrice || Number((livePrice * 0.9992).toFixed(decimals));
+              const isHighSpread = (token.spreadPct ?? 0.12) >= 0.35;
+
+              return (
+                <div
+                  key={token.id}
+                  onClick={() => onSelectToken(token)}
+                  className="relative p-3.5 rounded-2xl bg-gradient-to-b from-slate-900/90 via-[#0B101E] to-slate-950 border border-slate-800/90 hover:border-cyan-500/50 active:scale-[0.99] transition-all shadow-xl shadow-black/40 space-y-3 cursor-pointer group"
+                >
+                  {/* Row 1: Header - Rank, Avatar, Name, Category, Main Price & 24h Change */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-[11px] font-bold font-mono text-slate-500 w-5 shrink-0">
+                        #{rankNumber}
+                      </span>
+                      <TokenIcon symbol={token.symbol} className="w-9 h-9 shrink-0 shadow-md rounded-full" />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-white text-sm group-hover:text-cyan-300 transition-colors truncate">
+                            {token.name}
+                          </span>
+                          <span className="font-mono text-xs text-slate-400 font-semibold">
+                            {token.symbol}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.2 rounded border border-cyan-800/40 font-mono">
+                            {token.category}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Price & 24h Change */}
+                    <div className="text-right shrink-0">
+                      <div
+                        className={`font-mono text-base font-extrabold tracking-tight transition-all duration-300 ${
+                          flash === 'up'
+                            ? 'text-emerald-300 drop-shadow-[0_0_8px_#10b981]'
+                            : flash === 'down'
+                            ? 'text-rose-300 drop-shadow-[0_0_8px_#f43f5e]'
+                            : 'text-white'
+                        }`}
+                      >
+                        {formatUSD(binanceP)}
+                      </div>
+                      <div
+                        className={`inline-flex items-center text-[11px] font-bold font-mono ${
+                          token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                        }`}
+                      >
+                        {token.priceChange24h >= 0 ? (
+                          <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
+                        ) : (
+                          <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
+                        )}
+                        {token.priceChange24h >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: 4-Exchange Price Comparison Mini Grid */}
+                  <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 text-[11px] font-mono shadow-inner">
+                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'BINANCE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+                      <span className="text-[9px] text-slate-500 block uppercase font-sans">Binance</span>
+                      <span className="font-bold truncate block">{formatUSD(binanceP)}</span>
+                    </div>
+                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'OKX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+                      <span className="text-[9px] text-slate-500 block uppercase font-sans">OKX</span>
+                      <span className="font-bold truncate block">{formatUSD(okxP)}</span>
+                    </div>
+                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'COINBASE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+                      <span className="text-[9px] text-slate-500 block uppercase font-sans">Coinbase</span>
+                      <span className="font-bold truncate block">{formatUSD(coinbaseP)}</span>
+                    </div>
+                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'DEX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+                      <span className="text-[9px] text-slate-500 block uppercase font-sans">DEX</span>
+                      <span className="font-bold truncate block">{formatUSD(dexP)}</span>
+                    </div>
+                  </div>
+
+                  {/* Row 3: Whale Flow 2 Chiều Trực Quan */}
+                  <div className="space-y-1.5 pt-1 border-t border-slate-800/60">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="text-rose-400 font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                        Xả ${token.whaleInflowUSD}M ({inflowPct}%)
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-slate-400">
+                        Net: <strong className={token.netWhaleFlow >= 0 ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold'}>
+                          {token.netWhaleFlow >= 0 ? `+$${token.netWhaleFlow}M` : `-$${Math.abs(token.netWhaleFlow)}M`}
+                        </strong>
+                      </span>
+                      <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        Gom ${token.whaleOutflowUSD}M ({outflowPct}%)
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-950 rounded-full flex overflow-hidden border border-slate-800">
+                      <div style={{ width: `${inflowPct}%` }} className="bg-rose-500 transition-all duration-300" />
+                      <div style={{ width: `${outflowPct}%` }} className="bg-emerald-500 transition-all duration-300" />
+                    </div>
+                  </div>
+
+                  {/* Row 4: Spread Badge + Spot Recommendation + Action Button */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    {/* Spread badge */}
+                    {isHighSpread ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[10px] font-extrabold shadow-sm shadow-amber-500/10">
+                        <Zap className="w-3 h-3 text-amber-400 animate-bounce" />
+                        Spread ±{token.spreadPct}%
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        Spread: ±{token.spreadPct ?? 0.12}%
+                      </span>
+                    )}
+
+                    {/* Spot Recommendation Badge */}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[11px] px-2.5 py-1 rounded-xl font-extrabold border flex items-center gap-1 shadow-md ${
+                          isBuy
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10'
+                        }`}
+                      >
+                        {isBuy ? (
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        )}
+                        <span className="truncate max-w-[130px]">{token.statusLabel}</span>
+                        <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-950/80 text-white font-bold ml-0.5 border border-slate-700">
+                          {token.spotScore}
+                        </span>
+                      </span>
+
+                      <span className="text-[11px] text-cyan-400 font-bold group-hover:underline flex items-center shrink-0">
+                        Chi tiết ➔
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ========================================================== */}
+      {/* 2. GIAO DIỆN BẢNG MA TRẬN 11 CỘT (Desktop & Tablet hoặc Vuốt) */}
+      {/* ========================================================== */}
+      <div className={`${mobileView === 'cards' ? 'hidden md:block' : 'block'} overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800`}>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-800 uppercase tracking-wider text-[11px] bg-slate-900/70 font-mono select-none">
@@ -348,14 +563,14 @@ export function CoinTable({
                       </div>
                     </td>
 
-                    {/* Column 11: Thao Tác */}
-                    <td className="py-3 px-4 text-center">
+                    {/* Column 11: Nút xem chi tiết modal */}
+                    <td className="py-3 px-4 text-center font-sans">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelectToken(token);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-300 font-bold text-xs transition-colors border border-slate-700/80"
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-300 border border-slate-700 hover:border-cyan-400 transition-all font-bold text-xs"
                       >
                         Chi Tiết
                       </button>
@@ -370,9 +585,9 @@ export function CoinTable({
 
       {/* Pagination Footer Controls */}
       {totalPages > 1 && (
-        <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-slate-950/40">
-          <div className="text-slate-400 font-mono">
-            Trang <strong className="text-white">{currentPage}</strong> / <strong className="text-slate-300">{totalPages}</strong>
+        <div className="p-3.5 sm:p-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-slate-950/40">
+          <div className="text-slate-400 font-mono text-center sm:text-left">
+            Trang <strong className="text-white">{currentPage}</strong> / <strong className="text-slate-300">{totalPages}</strong> (Tổng {totalItems} đồng coin)
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -390,7 +605,7 @@ export function CoinTable({
               if (
                 page === 1 ||
                 page === totalPages ||
-                (page >= currentPage - 2 && page <= currentPage + 2)
+                (page >= currentPage - 1 && page <= currentPage + 1)
               ) {
                 return (
                   <button
@@ -406,10 +621,10 @@ export function CoinTable({
                   </button>
                 );
               }
-              if (page === currentPage - 3 || page === currentPage + 3) {
+              if (page === currentPage - 2 || page === currentPage + 2) {
                 return (
-                  <span key={page} className="text-slate-600 px-1 font-mono">
-                    ...
+                  <span key={page} className="text-slate-600 px-0.5 font-mono">
+                    ..
                   </span>
                 );
               }

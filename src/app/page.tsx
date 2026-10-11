@@ -582,7 +582,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Status Bar */}
+            {/* Quick Status Bar on Desktop */}
             <div className="hidden md:flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
                 <span className="text-slate-400">Độ phủ:</span>
@@ -606,6 +606,23 @@ export default function App() {
               </div>
             </div>
           </div>
+
+          {/* Quick Status Bar on Mobile (Sáng đẹp, đầy đủ thông tin dòng tiền) */}
+          <div className="flex md:hidden items-center justify-between gap-1.5 px-4 pb-2.5 pt-1 text-[11px] overflow-x-auto scrollbar-none border-t border-slate-800/40">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span className="font-bold text-cyan-300">100 Coin</span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 font-bold shrink-0">
+              <ArrowUpRight className="w-3 h-3 text-emerald-400" /> {aggregateFlow.outflowRatio}% Gom
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-950/50 border border-rose-500/40 text-rose-300 font-bold shrink-0">
+              <ArrowDownRight className="w-3 h-3 text-rose-400" /> {aggregateFlow.inflowRatio}% Xả
+            </div>
+            <div className="px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 font-mono font-bold text-emerald-400 shrink-0">
+              +${aggregateFlow.net.toFixed(0)}M Net
+            </div>
+          </div>
         </header>
 
         {/* MAIN BODY */}
@@ -613,24 +630,24 @@ export default function App() {
           {/* TOP 10 SPOT BUYS TODAY vs TOP 10 AVOID / HIGH RISK TODAY */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* COLUMN 1: TOP 10 SPOT BUYS TODAY */}
-            <div className="relative rounded-2xl bg-gradient-to-b from-emerald-950/20 via-slate-900/60 to-slate-950 border border-emerald-500/30 p-5 shadow-xl shadow-emerald-950/20 backdrop-blur-md overflow-hidden">
+            <div className="relative rounded-2xl bg-gradient-to-b from-emerald-950/20 via-slate-900/60 to-slate-950 border border-emerald-500/30 p-4 sm:p-5 shadow-xl shadow-emerald-950/20 backdrop-blur-md overflow-hidden">
               <div className="absolute top-0 right-0 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex items-center justify-between pb-4 border-b border-emerald-500/20 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 border-b border-emerald-500/20 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-extrabold text-white tracking-wide flex items-center gap-2">
                       TOP SPOT BUYS TODAY
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+                      <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
                         TOP 10 ĐỒNG
                       </span>
                     </h2>
-                    <p className="text-[11px] text-emerald-400/80">Xếp hạng 10 đồng gom hàng mạnh nhất, RSI đệm tăng trưởng</p>
+                    <p className="text-[10px] sm:text-[11px] text-emerald-400/80">Xếp hạng 10 đồng gom hàng mạnh nhất, RSI đệm tăng trưởng</p>
                   </div>
                 </div>
-                <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-800/60">
+                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-800/60 self-start sm:self-auto shrink-0">
                   XÁC SUẤT TĂNG CAO
                 </span>
               </div>
@@ -702,24 +719,24 @@ export default function App() {
             </div>
 
             {/* COLUMN 2: TOP 10 AVOID / HIGH RISK TODAY */}
-            <div className="relative rounded-2xl bg-gradient-to-b from-rose-950/20 via-slate-900/60 to-slate-950 border border-rose-500/30 p-5 shadow-xl shadow-rose-950/20 backdrop-blur-md overflow-hidden">
+            <div className="relative rounded-2xl bg-gradient-to-b from-rose-950/20 via-slate-900/60 to-slate-950 border border-rose-500/30 p-4 sm:p-5 shadow-xl shadow-rose-950/20 backdrop-blur-md overflow-hidden">
               <div className="absolute top-0 right-0 w-44 h-44 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex items-center justify-between pb-4 border-b border-rose-500/20 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 border-b border-rose-500/20 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0">
                     <ShieldAlert className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold text-white tracking-wide flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base font-extrabold text-white tracking-wide flex items-center gap-2">
                       AVOID / HIGH RISK TODAY
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
+                      <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
                         TOP 10 ĐỒNG
                       </span>
                     </h2>
-                    <p className="text-[11px] text-rose-400/80">Cảnh báo xả lên sàn CEX, mở khóa unlock, quá mua FOMO</p>
+                    <p className="text-[10px] sm:text-[11px] text-rose-400/80">Cảnh báo xả lên sàn CEX, mở khóa unlock, quá mua FOMO</p>
                   </div>
                 </div>
-                <span className="text-[11px] font-semibold text-rose-400 bg-rose-950/60 px-2.5 py-1 rounded-lg border border-rose-800/60">
+                <span className="text-[10px] sm:text-[11px] font-bold text-rose-400 bg-rose-950/60 px-2.5 py-1 rounded-lg border border-rose-800/60 self-start sm:self-auto shrink-0">
                   RỦI RO ĐU ĐỈNH CAO
                 </span>
               </div>
