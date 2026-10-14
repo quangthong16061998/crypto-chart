@@ -38,6 +38,10 @@ export const COIN_MAPPINGS: Record<string, CoinMappingItem> = {
   doge: { geckoId: 'dogecoin', binanceSymbol: 'DOGEUSDT', name: 'Dogecoin', symbol: 'DOGE', fallbackPrice: 0.385 },
   ada: { geckoId: 'cardano', binanceSymbol: 'ADAUSDT', name: 'Cardano', symbol: 'ADA', fallbackPrice: 0.745 },
   avax: { geckoId: 'avalanche-2', binanceSymbol: 'AVAXUSDT', name: 'Avalanche', symbol: 'AVAX', fallbackPrice: 34.8 },
+  bnb: { geckoId: 'binancecoin', binanceSymbol: 'BNBUSDT', name: 'BNB', symbol: 'BNB', fallbackPrice: 624.5 },
+  xrp: { geckoId: 'ripple', binanceSymbol: 'XRPUSDT', name: 'XRP', symbol: 'XRP', fallbackPrice: 0.528 },
+  zec: { geckoId: 'zcash', binanceSymbol: 'ZECUSDT', name: 'Zcash', symbol: 'ZEC', fallbackPrice: 38.6 },
+  hype: { geckoId: 'hyperliquid', binanceSymbol: undefined, name: 'Hyperliquid', symbol: 'HYPE', fallbackPrice: 24.5 },
   link: { geckoId: 'chainlink', binanceSymbol: 'LINKUSDT', name: 'Chainlink', symbol: 'LINK', fallbackPrice: 14.85 },
   pepe: { geckoId: 'pepe', binanceSymbol: 'PEPEUSDT', name: 'Pepe', symbol: 'PEPE', fallbackPrice: 0.0000195 },
   shib: { geckoId: 'shiba-inu', binanceSymbol: 'SHIBUSDT', name: 'Shiba Inu', symbol: 'SHIB', fallbackPrice: 0.0000248 },
@@ -77,7 +81,18 @@ export function useMultiExchangePrices() {
         if (localApiRes.ok) {
           const json = await localApiRes.json();
           if (json.success && json.prices && Object.keys(json.prices).length > 0) {
-            setData((prev) => ({ ...prev, ...json.prices }));
+            setData((prev) => {
+              let hasChanged = false;
+              for (const k in json.prices) {
+                const prevP = prev[k];
+                const nextP = json.prices[k];
+                if (!prevP || prevP.globalAvg !== nextP.globalAvg || prevP.spreadPct !== nextP.spreadPct) {
+                  hasChanged = true;
+                  break;
+                }
+              }
+              return hasChanged ? { ...prev, ...json.prices } : prev;
+            });
             setLastUpdated(json.timestamp || Date.now());
             return;
           }

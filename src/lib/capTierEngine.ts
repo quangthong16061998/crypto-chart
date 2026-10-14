@@ -160,6 +160,9 @@ export function formatCapUSD(amount: number): string {
   return `$${amount.toFixed(0)}`;
 }
 
+// Cache in-memory O(1) để triệt tiêu việc tính toán lặp lại hàng nghìn lần mỗi giây
+const capAuditCache = new Map<string, CapTierAudit>();
+
 /**
  * Hàm phân tích phân khúc vốn hóa & độ sâu thanh khoản toàn diện cho từng token
  */
@@ -171,6 +174,9 @@ export function getCapTierAudit(token: {
   marketCapUSD?: number;
 }): CapTierAudit {
   const sym = token.symbol.toLowerCase();
+  if (!token.marketCapUSD && capAuditCache.has(sym)) {
+    return capAuditCache.get(sym)!;
+  }
   const livePrice = token.globalAvgPrice || token.basePrice || 1;
 
   // Lấy dữ liệu mẫu nếu có trong bảng KNOWN_CAP_DATA
@@ -302,7 +308,7 @@ export function getCapTierAudit(token: {
     traderAdvice = 'Chỉ nên tham gia với số vốn chấp nhận mất (1% - 2% tài khoản). Phải kiểm tra Liquidity Locked trên DexScreener trước khi vào lệnh!';
   }
 
-  return {
+  const auditResult: CapTierAudit = {
     tier,
     tierLabel,
     badgeLabel,
@@ -326,4 +332,10 @@ export function getCapTierAudit(token: {
     scamRugPullRisk,
     traderAdvice,
   };
+
+  if (!token.marketCapUSD) {
+    capAuditCache.set(sym, auditResult);
+  }
+
+  return auditResult;
 }

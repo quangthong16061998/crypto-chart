@@ -154,6 +154,7 @@ export const RAW_TOP_100_DEFS = [
     basePrice: 1.42, priceChange24h: -11.8, high24h: 1.68, low24h: 1.38, volume24h: '94M', rsi: 28.5,
     whaleInflowUSD: 39.0, whaleOutflowUSD: 6.2, netWhaleFlow: -32.8, spotScore: 12,
     status: 'AVOID' as const, statusLabel: 'DUMP XẢ MẠNH / NÉ', confidence: 95,
+    isSpot: false, futuresOnly: true,
     reasons: ['Ví Dev/Voi nạp xả liên tục $39M lên các sàn DEX & CEX.', 'Thủng hỗ trợ cứng $1.50 với nến đỏ Marubozu khối lượng lớn.'],
     risks: ['Rơi tự do không hỗ trợ, thanh khoản cạn kiệt.'],
     entryTarget: 'CẤM BẮT DAO RƠI SPOT', stopLoss: 'N/A', takeProfit: 'N/A'
@@ -308,9 +309,10 @@ export const RAW_TOP_100_DEFS = [
     id: 'kaspa', symbol: 'KAS', name: 'Kaspa', category: 'Layer 1',
     basePrice: 0.162, priceChange24h: 3.20, high24h: 0.171, low24h: 0.154, volume24h: '140M', rsi: 51.5,
     whaleInflowUSD: 4.5, whaleOutflowUSD: 19.8, netWhaleFlow: 15.3, spotScore: 81,
-    status: 'BUY_SPOT' as const, statusLabel: 'TÍCH LŨY SPOT', confidence: 83,
-    reasons: ['Tỷ lệ hash-rate mạng lưới PoW liên tục lập đỉnh mới.', 'Net gom cá mập ổn định.'],
-    risks: ['Thanh khoản trên các sàn lớn cần mở rộng.'],
+    status: 'BUY_SPOT' as const, statusLabel: 'CHỈ FUTURES (KHÔNG SPOT)', confidence: 83,
+    isSpot: false, futuresOnly: true,
+    reasons: ['LƯU Ý: Binance chỉ hỗ trợ Hợp đồng tương lai KASUSDT Perpetual, KHÔNG có cặp giao dịch Spot giao ngay.', 'Tỷ lệ hash-rate mạng lưới PoW liên tục lập đỉnh mới.'],
+    risks: ['Không thể mua nắm giữ Spot để rút về ví lạnh trên Binance.'],
     entryTarget: '$0.155 - $0.163', stopLoss: '$0.144', takeProfit: '$0.20 - $0.23'
   },
   {
@@ -710,9 +712,10 @@ export const RAW_TOP_100_DEFS = [
     id: 'brett', symbol: 'BRETT', name: 'Brett', category: 'Meme / Base',
     basePrice: 0.168, priceChange24h: 9.50, high24h: 0.182, low24h: 0.151, volume24h: '185M', rsi: 62.5,
     whaleInflowUSD: 7.8, whaleOutflowUSD: 28.0, netWhaleFlow: 20.2, spotScore: 85,
-    status: 'BUY_SPOT' as const, statusLabel: 'TOP MEME BASE CHAIN', confidence: 87,
-    reasons: ['Linh vật biểu tượng của hệ sinh thái Base L2, cá mập gom ròng $20.2M.'],
-    risks: ['Cản $0.19.'],
+    status: 'BUY_SPOT' as const, statusLabel: 'CHỈ FUTURES (KHÔNG SPOT)', confidence: 87,
+    isSpot: false, futuresOnly: true,
+    reasons: ['LƯU Ý: Binance chỉ niêm yết hợp đồng BRETTUSDT Futures, KHÔNG có Spot pair trên Binance.', 'Linh vật biểu tượng của hệ sinh thái Base L2.'],
+    risks: ['Chỉ giao dịch hợp đồng đòn bẩy phái sinh trên Binance, không sở hữu spot.'],
     entryTarget: '$0.158 - $0.170', stopLoss: '$0.145', takeProfit: '$0.22 - $0.26'
   },
   {
@@ -800,8 +803,13 @@ export const TOP_100_COINS: TokenItem[] = RAW_TOP_100_DEFS.map((coin) => {
   const maxP = Math.max(binancePrice, okxPrice, coinbasePrice, dexPrice);
   const spreadPct = minP > 0 ? +(((maxP - minP) / minP) * 100).toFixed(2) : 0.14;
 
+  const isFuturesOnly = (coin as any).futuresOnly === true || ['KAS', 'BRETT', 'XPL'].includes(coin.symbol.toUpperCase());
+  const isSpot = (coin as any).isSpot !== undefined ? (coin as any).isSpot : !isFuturesOnly;
+
   return {
     ...coin,
+    isSpot,
+    futuresOnly: isFuturesOnly,
     binancePrice,
     okxPrice,
     coinbasePrice,

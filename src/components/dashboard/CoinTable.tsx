@@ -40,7 +40,406 @@ interface CoinTableProps {
   tableScope: number;
 }
 
-export function CoinTable({
+interface CoinMobileCardProps {
+  token: TokenItem;
+  rankNumber: number;
+  flash?: 'up' | 'down';
+  selectedExchange: ExchangeFilter;
+  formatUSD: (price: number) => string;
+  onSelectToken: (token: TokenItem) => void;
+}
+
+const CoinMobileCard = React.memo(function CoinMobileCard({
+  token,
+  rankNumber,
+  flash,
+  selectedExchange,
+  formatUSD,
+  onSelectToken,
+}: CoinMobileCardProps) {
+  const isBuy = token.status === 'BUY_SPOT';
+  const totalFlow = token.whaleInflowUSD + token.whaleOutflowUSD;
+  const inflowPct = totalFlow > 0 ? Math.round((token.whaleInflowUSD / totalFlow) * 100) : 50;
+  const outflowPct = 100 - inflowPct;
+
+  const livePrice = token.globalAvgPrice || token.basePrice;
+  const decimals = getDecimalsForPrice(livePrice);
+
+  const binanceP = token.binancePrice || livePrice;
+  const okxP = token.okxPrice || Number((livePrice * 1.0002).toFixed(decimals));
+  const coinbaseP = token.coinbasePrice || Number((livePrice * 1.0006).toFixed(decimals));
+  const dexP = token.dexPrice || Number((livePrice * 0.9992).toFixed(decimals));
+  const isHighSpread = (token.spreadPct ?? 0.12) >= 0.35;
+
+  return (
+    <div
+      onClick={() => onSelectToken(token)}
+      className="relative p-3.5 rounded-2xl bg-gradient-to-b from-slate-900/90 via-[#0B101E] to-slate-950 border border-slate-800/90 hover:border-cyan-500/50 active:scale-[0.99] transition-all shadow-xl shadow-black/40 space-y-3 cursor-pointer group gpu-layer"
+    >
+      {/* Row 1: Header - Rank, Avatar, Name, Category, Main Price & 24h Change */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="text-[11px] font-bold font-mono text-slate-500 w-5 shrink-0">
+            #{rankNumber}
+          </span>
+          <TokenIcon symbol={token.symbol} className="w-9 h-9 shrink-0 shadow-md rounded-full" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-nowrap">
+              <span className="font-extrabold text-white text-sm group-hover:text-cyan-300 transition-colors truncate max-w-[100px] xs:max-w-[140px]">
+                {token.name}
+              </span>
+              <span className="font-mono text-xs text-slate-400 font-semibold shrink-0">
+                {token.symbol}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-nowrap">
+              <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono whitespace-nowrap shrink-0">
+                {token.category}
+              </span>
+              <CapBadge symbol={token.symbol} basePrice={token.basePrice} className="whitespace-nowrap shrink-0" />
+              <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
+                RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Price & 24h Change */}
+        <div className="text-right shrink-0">
+          <div
+            className={`font-mono text-base font-extrabold tracking-tight transition-all duration-300 ${
+              flash === 'up'
+                ? 'text-emerald-300 drop-shadow-[0_0_8px_#10b981]'
+                : flash === 'down'
+                ? 'text-rose-300 drop-shadow-[0_0_8px_#f43f5e]'
+                : 'text-white'
+            }`}
+          >
+            {formatUSD(binanceP)}
+          </div>
+          <div
+            className={`inline-flex items-center text-[11px] font-bold font-mono ${
+              token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
+            }`}
+          >
+            {token.priceChange24h >= 0 ? (
+              <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
+            ) : (
+              <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
+            )}
+            {token.priceChange24h >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: 4-Exchange Price Comparison Mini Grid */}
+      <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 text-[11px] font-mono shadow-inner">
+        <div className={`text-center p-1 rounded-lg ${selectedExchange === 'BINANCE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+          <span className="text-[9px] text-slate-500 block uppercase font-sans">Binance</span>
+          <span className="font-bold truncate block">{formatUSD(binanceP)}</span>
+        </div>
+        <div className={`text-center p-1 rounded-lg ${selectedExchange === 'OKX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+          <span className="text-[9px] text-slate-500 block uppercase font-sans">OKX</span>
+          <span className="font-bold truncate block">{formatUSD(okxP)}</span>
+        </div>
+        <div className={`text-center p-1 rounded-lg ${selectedExchange === 'COINBASE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+          <span className="text-[9px] text-slate-500 block uppercase font-sans">Coinbase</span>
+          <span className="font-bold truncate block">{formatUSD(coinbaseP)}</span>
+        </div>
+        <div className={`text-center p-1 rounded-lg ${selectedExchange === 'DEX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
+          <span className="text-[9px] text-slate-500 block uppercase font-sans">DEX</span>
+          <span className="font-bold truncate block">{formatUSD(dexP)}</span>
+        </div>
+      </div>
+
+      {/* Row 3: Whale Flow 2 Chiều Trực Quan */}
+      <div className="space-y-1.5 pt-1 border-t border-slate-800/60">
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-rose-400 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+            Xả ${token.whaleInflowUSD}M ({inflowPct}%)
+          </span>
+          <span className="font-mono text-[10px] font-bold text-slate-400">
+            Net: <strong className={token.netWhaleFlow >= 0 ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold'}>
+              {token.netWhaleFlow >= 0 ? `+$${token.netWhaleFlow}M` : `-$${Math.abs(token.netWhaleFlow)}M`}
+            </strong>
+          </span>
+          <span className="text-emerald-400 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Gom ${token.whaleOutflowUSD}M ({outflowPct}%)
+          </span>
+        </div>
+        <div className="h-1.5 w-full bg-slate-950 rounded-full flex overflow-hidden border border-slate-800">
+          <div style={{ width: `${inflowPct}%` }} className="bg-rose-500 transition-all duration-300" />
+          <div style={{ width: `${outflowPct}%` }} className="bg-emerald-500 transition-all duration-300" />
+        </div>
+      </div>
+
+      {/* Row 4: Spread Badge + Spot Recommendation + Action Button */}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        {isHighSpread ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[10px] font-extrabold shadow-sm shadow-amber-500/10 whitespace-nowrap shrink-0">
+            <Zap className="w-3 h-3 text-amber-400 animate-bounce" />
+            Spread ±{token.spreadPct}%
+          </span>
+        ) : (
+          <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
+            Spread: ±{token.spreadPct ?? 0.12}%
+          </span>
+        )}
+
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className={`text-[10px] xs:text-[11px] px-2 py-0.5 rounded-xl font-extrabold border flex items-center gap-1 shadow-md whitespace-nowrap shrink-0 ${
+              isBuy
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
+                : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10'
+            }`}
+          >
+            {isBuy ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            ) : (
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            )}
+            <span className="truncate max-w-[100px] xs:max-w-[130px] whitespace-nowrap">{token.statusLabel}</span>
+            <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-950/80 text-white font-bold ml-0.5 border border-slate-700 shrink-0">
+              {token.spotScore}
+            </span>
+          </span>
+
+          <span className="text-[11px] text-cyan-400 font-bold group-hover:underline flex items-center shrink-0 whitespace-nowrap">
+            Chi tiết ➔
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+interface CoinTableRowProps {
+  token: TokenItem;
+  rankNumber: number;
+  flash?: 'up' | 'down';
+  selectedExchange: ExchangeFilter;
+  formatUSD: (price: number) => string;
+  onSelectToken: (token: TokenItem) => void;
+  getExchangeHighlightClass: (exchange: 'BINANCE' | 'OKX' | 'COINBASE' | 'DEX') => string;
+}
+
+const CoinTableRow = React.memo(function CoinTableRow({
+  token,
+  rankNumber,
+  flash,
+  selectedExchange,
+  formatUSD,
+  onSelectToken,
+  getExchangeHighlightClass,
+}: CoinTableRowProps) {
+  const isBuy = token.status === 'BUY_SPOT';
+  const totalFlow = token.whaleInflowUSD + token.whaleOutflowUSD;
+  const inflowPct = totalFlow > 0 ? Math.round((token.whaleInflowUSD / totalFlow) * 100) : 50;
+  const outflowPct = 100 - inflowPct;
+
+  const livePrice = token.globalAvgPrice || token.basePrice;
+  const decimals = getDecimalsForPrice(livePrice);
+
+  const binanceP = token.binancePrice || livePrice;
+  const okxP = token.okxPrice || Number((livePrice * 1.0002).toFixed(decimals));
+  const coinbaseP = token.coinbasePrice || Number((livePrice * 1.0006).toFixed(decimals));
+  const dexP = token.dexPrice || Number((livePrice * 0.9992).toFixed(decimals));
+  const isHighSpread = (token.spreadPct ?? 0.12) >= 0.35;
+
+  return (
+    <tr
+      onClick={() => onSelectToken(token)}
+      className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
+    >
+      {/* Column 1: Token name, avatar & rank */}
+      <td className="py-3 px-4 font-sans sticky left-0 z-10 bg-[#090D18]/95 group-hover:bg-slate-900/95 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-mono text-slate-500 font-bold w-6 shrink-0">
+            #{rankNumber}
+          </span>
+          <TokenIcon symbol={token.symbol} className="w-8 h-8" />
+          <div>
+            <div className="font-bold text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+              <span className="text-sm">{token.name}</span>
+              <span className="font-mono text-slate-400 text-xs font-normal">
+                {token.symbol}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">
+                {token.category}
+              </span>
+              <CapBadge symbol={token.symbol} basePrice={token.basePrice} />
+            </div>
+          </div>
+        </div>
+      </td>
+
+      {/* Column 2: Giá Binance CEX */}
+      <td className={`py-3 px-3.5 font-bold ${getExchangeHighlightClass('BINANCE')}`}>
+        <div className="space-y-0.5">
+          <span
+            className={`inline-block py-0.5 px-1.5 rounded transition-all duration-300 ${
+              flash === 'up'
+                ? 'bg-emerald-500/25 text-emerald-300 font-extrabold shadow-[0_0_8px_#10b981]'
+                : flash === 'down'
+                ? 'bg-rose-500/25 text-rose-300 font-extrabold shadow-[0_0_8px_#f43f5e]'
+                : selectedExchange === 'BINANCE'
+                ? 'text-cyan-300 font-extrabold'
+                : 'text-white'
+            }`}
+          >
+            {formatUSD(binanceP)}
+          </span>
+          <span className="text-[9px] text-slate-500 block">Binance CEX</span>
+        </div>
+      </td>
+
+      {/* Column 3: Giá OKX / Bybit */}
+      <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('OKX')}`}>
+        <div className="space-y-0.5">
+          <span className={`block ${selectedExchange === 'OKX' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
+            {formatUSD(okxP)}
+          </span>
+          <span className="text-[9px] text-slate-500 block">OKX/Bybit</span>
+        </div>
+      </td>
+
+      {/* Column 4: Giá Coinbase Pro */}
+      <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('COINBASE')}`}>
+        <div className="space-y-0.5">
+          <span className={`block ${selectedExchange === 'COINBASE' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
+            {formatUSD(coinbaseP)}
+          </span>
+          <span className="text-[9px] text-slate-500 block">Coinbase US</span>
+        </div>
+      </td>
+
+      {/* Column 5: Giá DEX Pools */}
+      <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('DEX')}`}>
+        <div className="space-y-0.5">
+          <span className={`block ${selectedExchange === 'DEX' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
+            {formatUSD(dexP)}
+          </span>
+          <span className="text-[9px] text-slate-500 block">Raydium/Uni</span>
+        </div>
+      </td>
+
+      {/* Column 6: Độ lệch giá (Spread Tracker) */}
+      <td className="py-3 px-3.5 text-center">
+        {isHighSpread ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold shadow-sm shadow-amber-500/10">
+            <Zap className="w-3 h-3 text-amber-400" />
+            ±{token.spreadPct}%
+          </span>
+        ) : (
+          <span className="inline-block px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700/60 text-[10px]">
+            ±{token.spreadPct ?? 0.12}%
+          </span>
+        )}
+      </td>
+
+      {/* Column 7: Biến Động 24h */}
+      <td className="py-3 px-3.5">
+        <span
+          className={`inline-flex items-center font-bold text-xs ${
+            token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
+          }`}
+        >
+          {token.priceChange24h >= 0 ? (
+            <ArrowUpRight className="w-3.5 h-3.5 mr-0.5 shrink-0" />
+          ) : (
+            <ArrowDownRight className="w-3.5 h-3.5 mr-0.5 shrink-0" />
+          )}
+          {token.priceChange24h >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`}
+        </span>
+      </td>
+
+      {/* Column 8: 2-Sided Whale Flow progress bar */}
+      <td className="py-3 px-4 min-w-[200px]">
+        <div className="space-y-1">
+          <div className="flex justify-between text-[10px]">
+            <span className="text-rose-400 font-semibold">
+              Xả ${token.whaleInflowUSD}M ({inflowPct}%)
+            </span>
+            <span className="text-emerald-400 font-semibold">
+              Gom ${token.whaleOutflowUSD}M ({outflowPct}%)
+            </span>
+          </div>
+          <div className="h-2 w-full bg-slate-950 rounded-full flex overflow-hidden border border-slate-800">
+            <div style={{ width: `${inflowPct}%` }} className="bg-rose-500" />
+            <div style={{ width: `${outflowPct}%` }} className="bg-emerald-500" />
+          </div>
+          <div className="text-[10px] text-right">
+            <span
+              className={
+                token.netWhaleFlow >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'
+              }
+            >
+              Net: {token.netWhaleFlow >= 0 ? `+$${token.netWhaleFlow}M` : `-$${Math.abs(token.netWhaleFlow)}M`}
+            </span>
+          </div>
+        </div>
+      </td>
+
+      {/* Column 9: RSI */}
+      <td className="py-3 px-3 text-center">
+        <span
+          className={`font-bold text-xs px-2 py-0.5 rounded ${
+            token.rsi > 70
+              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+              : token.rsi < 35
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+          }`}
+        >
+          {token.rsi}
+        </span>
+      </td>
+
+      {/* Column 10: Khuyến Nghị Spot */}
+      <td className="py-3 px-4 font-sans">
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs px-2.5 py-1 rounded-lg font-bold border flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
+              isBuy
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10'
+                : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-rose-500/10'
+            }`}
+          >
+            {isBuy ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+            )}
+            {token.statusLabel}
+          </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+            {token.spotScore}
+          </span>
+        </div>
+      </td>
+
+      {/* Column 11: Nút xem chi tiết modal */}
+      <td className="py-3 px-4 text-center font-sans">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelectToken(token);
+          }}
+          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-300 border border-slate-700 hover:border-cyan-400 transition-all font-bold text-xs"
+        >
+          Chi Tiết
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+function CoinTableComponent({
   tokens,
   selectedExchange,
   priceFlashMap = {},
@@ -55,12 +454,12 @@ export function CoinTable({
   // Chế độ hiển thị trên Mobile: 'cards' (Thẻ Pro vuốt dọc trực quan) hoặc 'table' (Bảng vuốt ngang truyền thống)
   const [mobileView, setMobileView] = useState<'cards' | 'table'>('cards');
 
-  const getExchangeHighlightClass = (exchange: 'BINANCE' | 'OKX' | 'COINBASE' | 'DEX') => {
+  const getExchangeHighlightClass = React.useCallback((exchange: 'BINANCE' | 'OKX' | 'COINBASE' | 'DEX') => {
     if (selectedExchange === exchange) {
       return 'bg-cyan-500/10 border-x border-cyan-500/40 text-cyan-200';
     }
     return '';
-  };
+  }, [selectedExchange]);
 
   const getExchangeHeaderHighlight = (exchange: 'BINANCE' | 'OKX' | 'COINBASE' | 'DEX') => {
     if (selectedExchange === exchange) {
@@ -73,7 +472,7 @@ export function CoinTable({
   const endItem = Math.min(currentPage * tableScope, totalItems);
 
   return (
-    <div className="rounded-2xl bg-[#090D18]/95 border border-slate-800 shadow-2xl overflow-hidden backdrop-blur-xl">
+    <div className="rounded-2xl bg-[#090D18]/95 border border-slate-800 shadow-2xl overflow-hidden backdrop-blur-xl content-visibility-auto">
       {/* Table Sub-header with Exchange View Status indicator and Mobile View Switcher */}
       <div className="px-4 sm:px-5 py-3 border-b border-slate-800/80 bg-slate-950/60 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 flex-wrap">
@@ -141,170 +540,17 @@ export function CoinTable({
               <p className="text-xs text-slate-500 mt-1">Hãy thử đổi nguồn sàn hoặc xóa bộ lọc tín hiệu.</p>
             </div>
           ) : (
-            tokens.map((token, idx) => {
-              const flash = priceFlashMap[token.symbol];
-              const isBuy = token.status === 'BUY_SPOT';
-              const totalFlow = token.whaleInflowUSD + token.whaleOutflowUSD;
-              const inflowPct = totalFlow > 0 ? Math.round((token.whaleInflowUSD / totalFlow) * 100) : 50;
-              const outflowPct = 100 - inflowPct;
-              const rankNumber = (currentPage - 1) * tableScope + idx + 1;
-
-              const livePrice = token.globalAvgPrice || token.basePrice;
-              const decimals = getDecimalsForPrice(livePrice);
-
-              const binanceP = token.binancePrice || livePrice;
-              const okxP = token.okxPrice || Number((livePrice * 1.0002).toFixed(decimals));
-              const coinbaseP = token.coinbasePrice || Number((livePrice * 1.0006).toFixed(decimals));
-              const dexP = token.dexPrice || Number((livePrice * 0.9992).toFixed(decimals));
-              const isHighSpread = (token.spreadPct ?? 0.12) >= 0.35;
-
-              return (
-                <div
-                  key={token.id}
-                  onClick={() => onSelectToken(token)}
-                  className="relative p-3.5 rounded-2xl bg-gradient-to-b from-slate-900/90 via-[#0B101E] to-slate-950 border border-slate-800/90 hover:border-cyan-500/50 active:scale-[0.99] transition-all shadow-xl shadow-black/40 space-y-3 cursor-pointer group"
-                >
-                  {/* Row 1: Header - Rank, Avatar, Name, Category, Main Price & 24h Change */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-[11px] font-bold font-mono text-slate-500 w-5 shrink-0">
-                        #{rankNumber}
-                      </span>
-                      <TokenIcon symbol={token.symbol} className="w-9 h-9 shrink-0 shadow-md rounded-full" />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-nowrap">
-                          <span className="font-extrabold text-white text-sm group-hover:text-cyan-300 transition-colors truncate max-w-[100px] xs:max-w-[140px]">
-                            {token.name}
-                          </span>
-                          <span className="font-mono text-xs text-slate-400 font-semibold shrink-0">
-                            {token.symbol}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-nowrap">
-                          <span className="text-[9px] text-cyan-300 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40 font-mono whitespace-nowrap shrink-0">
-                            {token.category}
-                          </span>
-                          <CapBadge symbol={token.symbol} basePrice={token.basePrice} className="whitespace-nowrap shrink-0" />
-                          <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
-                            RSI: <strong className={token.rsi > 70 ? 'text-rose-400' : token.rsi < 35 ? 'text-amber-400' : 'text-emerald-400 font-bold'}>{token.rsi}</strong>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Price & 24h Change */}
-                    <div className="text-right shrink-0">
-                      <div
-                        className={`font-mono text-base font-extrabold tracking-tight transition-all duration-300 ${
-                          flash === 'up'
-                            ? 'text-emerald-300 drop-shadow-[0_0_8px_#10b981]'
-                            : flash === 'down'
-                            ? 'text-rose-300 drop-shadow-[0_0_8px_#f43f5e]'
-                            : 'text-white'
-                        }`}
-                      >
-                        {formatUSD(binanceP)}
-                      </div>
-                      <div
-                        className={`inline-flex items-center text-[11px] font-bold font-mono ${
-                          token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {token.priceChange24h >= 0 ? (
-                          <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />
-                        ) : (
-                          <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />
-                        )}
-                        {token.priceChange24h >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: 4-Exchange Price Comparison Mini Grid */}
-                  <div className="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-slate-950/90 border border-slate-800/80 text-[11px] font-mono shadow-inner">
-                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'BINANCE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
-                      <span className="text-[9px] text-slate-500 block uppercase font-sans">Binance</span>
-                      <span className="font-bold truncate block">{formatUSD(binanceP)}</span>
-                    </div>
-                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'OKX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
-                      <span className="text-[9px] text-slate-500 block uppercase font-sans">OKX</span>
-                      <span className="font-bold truncate block">{formatUSD(okxP)}</span>
-                    </div>
-                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'COINBASE' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
-                      <span className="text-[9px] text-slate-500 block uppercase font-sans">Coinbase</span>
-                      <span className="font-bold truncate block">{formatUSD(coinbaseP)}</span>
-                    </div>
-                    <div className={`text-center p-1 rounded-lg ${selectedExchange === 'DEX' ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 font-bold' : 'text-slate-300'}`}>
-                      <span className="text-[9px] text-slate-500 block uppercase font-sans">DEX</span>
-                      <span className="font-bold truncate block">{formatUSD(dexP)}</span>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Whale Flow 2 Chiều Trực Quan */}
-                  <div className="space-y-1.5 pt-1 border-t border-slate-800/60">
-                    <div className="flex justify-between items-center text-[10px]">
-                      <span className="text-rose-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-                        Xả ${token.whaleInflowUSD}M ({inflowPct}%)
-                      </span>
-                      <span className="font-mono text-[10px] font-bold text-slate-400">
-                        Net: <strong className={token.netWhaleFlow >= 0 ? 'text-emerald-400 font-extrabold' : 'text-rose-400 font-extrabold'}>
-                          {token.netWhaleFlow >= 0 ? `+$${token.netWhaleFlow}M` : `-$${Math.abs(token.netWhaleFlow)}M`}
-                        </strong>
-                      </span>
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Gom ${token.whaleOutflowUSD}M ({outflowPct}%)
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-950 rounded-full flex overflow-hidden border border-slate-800">
-                      <div style={{ width: `${inflowPct}%` }} className="bg-rose-500 transition-all duration-300" />
-                      <div style={{ width: `${outflowPct}%` }} className="bg-emerald-500 transition-all duration-300" />
-                    </div>
-                  </div>
-
-                  {/* Row 4: Spread Badge + Spot Recommendation + Action Button */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    {/* Spread badge */}
-                    {isHighSpread ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 text-[10px] font-extrabold shadow-sm shadow-amber-500/10 whitespace-nowrap shrink-0">
-                        <Zap className="w-3 h-3 text-amber-400 animate-bounce" />
-                        Spread ±{token.spreadPct}%
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap shrink-0">
-                        Spread: ±{token.spreadPct ?? 0.12}%
-                      </span>
-                    )}
-
-                    {/* Spot Recommendation Badge */}
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`text-[10px] xs:text-[11px] px-2 py-0.5 rounded-xl font-extrabold border flex items-center gap-1 shadow-md whitespace-nowrap shrink-0 ${
-                          isBuy
-                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
-                            : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10'
-                        }`}
-                      >
-                        {isBuy ? (
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        ) : (
-                          <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                        )}
-                        <span className="truncate max-w-[100px] xs:max-w-[130px] whitespace-nowrap">{token.statusLabel}</span>
-                        <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-slate-950/80 text-white font-bold ml-0.5 border border-slate-700 shrink-0">
-                          {token.spotScore}
-                        </span>
-                      </span>
-
-                      <span className="text-[11px] text-cyan-400 font-bold group-hover:underline flex items-center shrink-0 whitespace-nowrap">
-                        Chi tiết ➔
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            tokens.map((token, idx) => (
+              <CoinMobileCard
+                key={token.id}
+                token={token}
+                rankNumber={(currentPage - 1) * tableScope + idx + 1}
+                flash={priceFlashMap[token.symbol]}
+                selectedExchange={selectedExchange}
+                formatUSD={formatUSD}
+                onSelectToken={onSelectToken}
+              />
+            ))
           )}
         </div>
       )}
@@ -312,7 +558,7 @@ export function CoinTable({
       {/* ========================================================== */}
       {/* 2. GIAO DIỆN BẢNG MA TRẬN 11 CỘT (Desktop & Tablet hoặc Vuốt) */}
       {/* ========================================================== */}
-      <div className={`${mobileView === 'cards' ? 'hidden md:block' : 'block'} overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800`}>
+      <div className={`${mobileView === 'cards' ? 'hidden md:block' : 'block'} overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 table-optimized`}>
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-slate-800 uppercase tracking-wider text-[11px] bg-slate-900/70 font-mono select-none">
@@ -375,214 +621,18 @@ export function CoinTable({
                 </td>
               </tr>
             ) : (
-              tokens.map((token, idx) => {
-                const flash = priceFlashMap[token.symbol];
-                const isBuy = token.status === 'BUY_SPOT';
-                const totalFlow = token.whaleInflowUSD + token.whaleOutflowUSD;
-                const inflowPct = totalFlow > 0 ? Math.round((token.whaleInflowUSD / totalFlow) * 100) : 50;
-                const outflowPct = 100 - inflowPct;
-                const rankNumber = (currentPage - 1) * tableScope + idx + 1;
-
-                const livePrice = token.globalAvgPrice || token.basePrice;
-                const decimals = getDecimalsForPrice(livePrice);
-
-                const binanceP = token.binancePrice || livePrice;
-                const okxP = token.okxPrice || Number((livePrice * 1.0002).toFixed(decimals));
-                const coinbaseP = token.coinbasePrice || Number((livePrice * 1.0006).toFixed(decimals));
-                const dexP = token.dexPrice || Number((livePrice * 0.9992).toFixed(decimals));
-
-                const isHighSpread = (token.spreadPct ?? 0.12) >= 0.35;
-
-                return (
-                  <tr
-                    key={token.id}
-                    onClick={() => onSelectToken(token)}
-                    className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
-                  >
-                    {/* Column 1: Token name, avatar & rank */}
-                    <td className="py-3 px-4 font-sans sticky left-0 z-10 bg-[#090D18]/95 group-hover:bg-slate-900/95 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-mono text-slate-500 font-bold w-6 shrink-0">
-                          #{rankNumber}
-                        </span>
-                        <TokenIcon symbol={token.symbol} className="w-8 h-8" />
-                        <div>
-                          <div className="font-bold text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
-                            <span className="text-sm">{token.name}</span>
-                            <span className="font-mono text-slate-400 text-xs font-normal">
-                              {token.symbol}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60 font-mono">
-                              {token.category}
-                            </span>
-                            <CapBadge symbol={token.symbol} basePrice={token.basePrice} />
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Column 2: Giá Binance CEX */}
-                    <td className={`py-3 px-3.5 font-bold ${getExchangeHighlightClass('BINANCE')}`}>
-                      <div className="space-y-0.5">
-                        <span
-                          className={`inline-block py-0.5 px-1.5 rounded transition-all duration-300 ${
-                            flash === 'up'
-                              ? 'bg-emerald-500/25 text-emerald-300 font-extrabold shadow-[0_0_8px_#10b981]'
-                              : flash === 'down'
-                              ? 'bg-rose-500/25 text-rose-300 font-extrabold shadow-[0_0_8px_#f43f5e]'
-                              : selectedExchange === 'BINANCE'
-                              ? 'text-cyan-300 font-extrabold'
-                              : 'text-white'
-                          }`}
-                        >
-                          {formatUSD(binanceP)}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block">Binance CEX</span>
-                      </div>
-                    </td>
-
-                    {/* Column 3: Giá OKX / Bybit */}
-                    <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('OKX')}`}>
-                      <div className="space-y-0.5">
-                        <span className={`block ${selectedExchange === 'OKX' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
-                          {formatUSD(okxP)}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block">OKX/Bybit</span>
-                      </div>
-                    </td>
-
-                    {/* Column 4: Giá Coinbase Pro */}
-                    <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('COINBASE')}`}>
-                      <div className="space-y-0.5">
-                        <span className={`block ${selectedExchange === 'COINBASE' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
-                          {formatUSD(coinbaseP)}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block">Coinbase US</span>
-                      </div>
-                    </td>
-
-                    {/* Column 5: Giá DEX Pools */}
-                    <td className={`py-3 px-3.5 font-medium ${getExchangeHighlightClass('DEX')}`}>
-                      <div className="space-y-0.5">
-                        <span className={`block ${selectedExchange === 'DEX' ? 'text-cyan-300 font-extrabold' : 'text-slate-200'}`}>
-                          {formatUSD(dexP)}
-                        </span>
-                        <span className="text-[9px] text-slate-500 block">Raydium/Uni</span>
-                      </div>
-                    </td>
-
-                    {/* Column 6: Độ lệch giá (Spread Tracker) */}
-                    <td className="py-3 px-3.5 text-center">
-                      {isHighSpread ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold shadow-sm shadow-amber-500/10">
-                          <Zap className="w-3 h-3 text-amber-400" />
-                          ±{token.spreadPct}%
-                        </span>
-                      ) : (
-                        <span className="inline-block px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-400 border border-slate-700/60 text-[10px]">
-                          ±{token.spreadPct ?? 0.12}%
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Column 7: Biến Động 24h */}
-                    <td className="py-3 px-3.5">
-                      <span
-                        className={`inline-flex items-center font-bold text-xs ${
-                          token.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
-                      >
-                        {token.priceChange24h >= 0 ? (
-                          <ArrowUpRight className="w-3.5 h-3.5 mr-0.5 shrink-0" />
-                        ) : (
-                          <ArrowDownRight className="w-3.5 h-3.5 mr-0.5 shrink-0" />
-                        )}
-                        {token.priceChange24h >= 0 ? `+${token.priceChange24h}%` : `${token.priceChange24h}%`}
-                      </span>
-                    </td>
-
-                    {/* Column 8: 2-Sided Whale Flow progress bar */}
-                    <td className="py-3 px-4 min-w-[200px]">
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[10px]">
-                          <span className="text-rose-400 font-semibold">
-                            Xả ${token.whaleInflowUSD}M ({inflowPct}%)
-                          </span>
-                          <span className="text-emerald-400 font-semibold">
-                            Gom ${token.whaleOutflowUSD}M ({outflowPct}%)
-                          </span>
-                        </div>
-                        <div className="h-2 w-full bg-slate-950 rounded-full flex overflow-hidden border border-slate-800">
-                          <div style={{ width: `${inflowPct}%` }} className="bg-rose-500" />
-                          <div style={{ width: `${outflowPct}%` }} className="bg-emerald-500" />
-                        </div>
-                        <div className="text-[10px] text-right">
-                          <span
-                            className={
-                              token.netWhaleFlow >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'
-                            }
-                          >
-                            Net: {token.netWhaleFlow >= 0 ? `+$${token.netWhaleFlow}M` : `-$${Math.abs(token.netWhaleFlow)}M`}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Column 9: RSI */}
-                    <td className="py-3 px-3 text-center">
-                      <span
-                        className={`font-bold text-xs px-2 py-0.5 rounded ${
-                          token.rsi > 70
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                            : token.rsi < 35
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        }`}
-                      >
-                        {token.rsi}
-                      </span>
-                    </td>
-
-                    {/* Column 10: Khuyến Nghị Spot */}
-                    <td className="py-3 px-4 font-sans">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs px-2.5 py-1 rounded-lg font-bold border flex items-center gap-1.5 whitespace-nowrap shadow-sm ${
-                            isBuy
-                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10'
-                              : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-rose-500/10'
-                          }`}
-                        >
-                          {isBuy ? (
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                          )}
-                          {token.statusLabel}
-                        </span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">
-                          {token.spotScore}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Column 11: Nút xem chi tiết modal */}
-                    <td className="py-3 px-4 text-center font-sans">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSelectToken(token);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-300 border border-slate-700 hover:border-cyan-400 transition-all font-bold text-xs"
-                      >
-                        Chi Tiết
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
+              tokens.map((token, idx) => (
+                <CoinTableRow
+                  key={token.id}
+                  token={token}
+                  rankNumber={(currentPage - 1) * tableScope + idx + 1}
+                  flash={priceFlashMap[token.symbol]}
+                  selectedExchange={selectedExchange}
+                  formatUSD={formatUSD}
+                  onSelectToken={onSelectToken}
+                  getExchangeHighlightClass={getExchangeHighlightClass}
+                />
+              ))
             )}
           </tbody>
         </table>
@@ -650,3 +700,6 @@ export function CoinTable({
     </div>
   );
 }
+
+export const CoinTable = React.memo(CoinTableComponent);
+

@@ -11,7 +11,7 @@ interface CapBadgeProps {
   basePrice?: number;
 }
 
-export function CapBadge({ symbol, className = '', showDetails = false, marketCapUSD, basePrice }: CapBadgeProps) {
+export const CapBadge = React.memo(function CapBadge({ symbol, className = '', showDetails = false, marketCapUSD, basePrice }: CapBadgeProps) {
   const audit = getCapTierAudit({ symbol, marketCapUSD, basePrice });
 
   const colorStyles = {
@@ -33,4 +33,4 @@ export function CapBadge({ symbol, className = '', showDetails = false, marketCa
       )}
     </span>
   );
-}
+});

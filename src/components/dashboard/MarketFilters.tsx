@@ -41,7 +41,7 @@ export interface MarketFiltersProps {
   highSpreadCount: number;
 }
 
-export function MarketFilters({
+function MarketFiltersComponent({
   selectedExchange,
   setSelectedExchange,
   selectedSignal,
@@ -291,3 +291,6 @@ export function MarketFilters({
     </div>
   );
 }
+
+export const MarketFilters = React.memo(MarketFiltersComponent);
+

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -23,6 +23,7 @@ import {
 import { TokenIcon } from '@/app/page';
 import { formatCryptoPrice } from '@/lib/priceFormatter';
 import { CapBadge } from '@/components/dashboard/CapBadge';
+import { EtfFlowTracker } from '@/components/dashboard/EtfFlowTracker';
 
 export interface TokenFlow {
   symbol: string;
@@ -50,7 +51,155 @@ interface WhaleFlowRadarProps {
 
 export type RadarSortOption = 'NET_FLOW_DESC' | 'NET_FLOW_ASC' | 'VOLUME_DESC' | 'CHANGE_DESC' | 'SPOT_SCORE_DESC';
 
-export function WhaleFlowRadar({
+const formatPrice = (price: number) => {
+  return formatCryptoPrice(price);
+};
+
+const formatMillions = (usd: number) => {
+  if (usd >= 1_000_000_000) {
+    return (usd / 1_000_000_000).toFixed(2) + 'B';
+  }
+  if (usd >= 1_000_000) {
+    return (usd / 1_000_000).toFixed(1) + 'M';
+  }
+  if (usd >= 1_000) {
+    return (usd / 1_000).toFixed(0) + 'K';
+  }
+  return usd.toFixed(0);
+};
+
+interface WhaleRadarCardProps {
+  token: TokenFlow;
+  index: number;
+  onSelectToken?: (symbol: string) => void;
+}
+
+const WhaleRadarCard = React.memo(function WhaleRadarCard({
+  token,
+  index,
+  onSelectToken,
+}: WhaleRadarCardProps) {
+  const totalFlow = (token.inflowUsd + token.outflowUsd) || 1;
+  const inflowPct = Math.round((token.inflowUsd / totalFlow) * 100);
+  const outflowPct = 100 - inflowPct;
+  const netFlow = token.outflowUsd - token.inflowUsd;
+  const isAccumulating = netFlow >= 0;
+  const change = token.priceChange24h ?? 0;
+
+  return (
+    <div
+      onClick={() => onSelectToken?.(token.symbol)}
+      className="bg-slate-900/60 hover:bg-slate-800/80 p-3.5 rounded-xl border border-slate-800/80 hover:border-cyan-500/50 transition-all cursor-pointer group shadow-lg gpu-layer"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2.5 gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-mono text-slate-500 font-bold w-5">
+            #{index + 1}
+          </span>
+          
+          {/* Token Icon */}
+          <TokenIcon symbol={token.symbol} className="w-6 h-6" />
+
+          {/* Token Symbol, Name & CapBadge */}
+          <span className="font-extrabold text-white text-sm uppercase group-hover:text-cyan-300 transition-colors">
+            {token.symbol}
+          </span>
+          <span className="text-xs text-slate-400">({token.name})</span>
+
+          {/* CapBadge chuẩn xác */}
+          <CapBadge
+            symbol={token.symbol}
+            marketCapUSD={token.marketCapUSD}
+            basePrice={token.binancePrice}
+          />
+
+          {/* Price 24h Change Badge */}
+          <span
+            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+              change >= 0
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+            }`}
+          >
+            {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+          </span>
+
+          {/* Multi-Exchange Price Comparison Badges */}
+          <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px]">
+            <span className="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/60">
+              Binance: <strong className="text-white">{formatPrice(token.binancePrice)}</strong>
+            </span>
+            <span className="px-2 py-0.5 rounded bg-slate-800/90 text-cyan-300 border border-cyan-500/30">
+              Bình quân: <strong className="text-cyan-200">{formatPrice(token.globalAvgPrice)}</strong>
+            </span>
+            {token.quoteVolumeUSD && (
+              <span className="px-1.5 py-0.5 rounded bg-slate-800/70 text-slate-400 text-[10px]">
+                Vol: ${formatMillions(token.quoteVolumeUSD)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Net Whale Flow Outcome Badge */}
+        <div className="text-right shrink-0">
+          {isAccumulating ? (
+            <span className="text-xs font-bold text-emerald-300 bg-emerald-950/70 px-2.5 py-1 rounded-md border border-emerald-700/60 flex items-center gap-1 shadow-sm shadow-emerald-950">
+              <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              Đang gom ròng: +${formatMillions(netFlow)}
+            </span>
+          ) : (
+            <span className="text-xs font-bold text-rose-300 bg-rose-950/70 px-2.5 py-1 rounded-md border border-rose-700/60 flex items-center gap-1 shadow-sm shadow-rose-950">
+              <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
+              Đang xả ròng: -${formatMillions(Math.abs(netFlow))}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Biểu đồ phân bổ 2 bên (Dual-sided Split Bar) */}
+      <div className="space-y-1">
+        <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+          <span className="text-rose-400 font-bold flex items-center gap-1">
+            Nạp CEX: ${formatMillions(token.inflowUsd)} ({inflowPct}%)
+          </span>
+          <span className="text-emerald-400 font-bold flex items-center gap-1">
+            Rút ví gom: ${formatMillions(token.outflowUsd)} ({outflowPct}%)
+          </span>
+        </div>
+        <div className="w-full h-3.5 bg-slate-950 rounded-full flex overflow-hidden p-0.5 border border-slate-800 relative">
+          {/* Left: Inflow (Xả - Đỏ Rose) */}
+          <div
+            style={{ width: `${inflowPct}%` }}
+            className="bg-gradient-to-r from-rose-600 via-rose-500 to-rose-400 h-full rounded-l-full transition-all duration-500 relative flex items-center justify-start pl-2"
+          >
+            {inflowPct > 18 && (
+              <span className="text-[9px] font-bold text-white font-mono drop-shadow">
+                {inflowPct}%
+              </span>
+            )}
+          </div>
+
+          {/* Glowing center divider line */}
+          <div className="w-1 h-full bg-white z-10 shadow-[0_0_8px_#ffffff]" />
+
+          {/* Right: Outflow (Gom - Xanh Emerald) */}
+          <div
+            style={{ width: `${outflowPct}%` }}
+            className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 h-full rounded-r-full transition-all duration-500 relative flex items-center justify-end pr-2"
+          >
+            {outflowPct > 18 && (
+              <span className="text-[9px] font-bold text-slate-950 font-mono drop-shadow">
+                {outflowPct}%
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+function WhaleFlowRadarComponent({
   tokens,
   onSelectToken,
   lastUpdated,
@@ -62,23 +211,6 @@ export function WhaleFlowRadar({
   const [flowFilter, setFlowFilter] = useState<'ALL' | 'ACCUMULATING' | 'DUMPING'>('ALL');
   const [radarSearch, setRadarSearch] = useState<string>('');
   const [radarSort, setRadarSort] = useState<RadarSortOption>('NET_FLOW_DESC');
-
-  const formatPrice = (price: number) => {
-    return formatCryptoPrice(price);
-  };
-
-  const formatMillions = (usd: number) => {
-    if (usd >= 1_000_000_000) {
-      return (usd / 1_000_000_000).toFixed(2) + 'B';
-    }
-    if (usd >= 1_000_000) {
-      return (usd / 1_000_000).toFixed(1) + 'M';
-    }
-    if (usd >= 1_000) {
-      return (usd / 1_000).toFixed(0) + 'K';
-    }
-    return usd.toFixed(0);
-  };
 
   // Tính toán thống kê tổng quan thị trường On-chain 24h
   const marketAggregate = useMemo(() => {
@@ -182,8 +314,14 @@ export function WhaleFlowRadar({
     });
   }, [lastUpdated]);
 
+  // Xử lý khi người dùng bấm vào một coin trong bảng ETF Flow
+  const handleSelectEtfToken = useCallback((symbol: string) => {
+    setRadarSearch(symbol);
+    onSelectToken?.(symbol);
+  }, [onSelectToken]);
+
   return (
-    <div className="bg-[#0B0F1E]/95 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl space-y-4">
+    <div className="bg-[#0B0F1E]/95 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl space-y-4 content-visibility-auto">
       {/* 1. Header with Title, Live Badge, Time and Flow Legend */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 border-b border-slate-800/80 gap-4">
         <div>
@@ -239,7 +377,10 @@ export function WhaleFlowRadar({
         </div>
       </div>
 
-      {/* 2. Macro Market Summary Banner (Tổng quan áp lực thị trường toàn diện) */}
+      {/* 2. DÒNG TIỀN VÀO ETF HÔM NAY (INSTITUTIONAL SPOT ETF & MULTI-EXCHANGE DATA) */}
+      <EtfFlowTracker onSelectToken={handleSelectEtfToken} />
+
+      {/* 3. Macro Market Summary Banner (Tổng quan áp lực thị trường toàn diện) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-gradient-to-r from-slate-950/90 via-[#0C1222] to-slate-950/90 border border-slate-800 text-xs">
         {/* Box 1: Tổng Nạp Sàn */}
         <div className="flex items-center gap-3 p-2.5 rounded-lg bg-rose-950/20 border border-rose-900/30">
@@ -377,127 +518,14 @@ export function WhaleFlowRadar({
 
       {/* 4. Grid of Tokens with Dual-Sided Visual Bar */}
       <div className="space-y-3">
-        {displayedList.map((token, index) => {
-          const totalFlow = (token.inflowUsd + token.outflowUsd) || 1;
-          const inflowPct = Math.round((token.inflowUsd / totalFlow) * 100);
-          const outflowPct = 100 - inflowPct;
-          const netFlow = token.outflowUsd - token.inflowUsd; // Dương = Tốt (Gom), Âm = Xấu (Xả)
-          const isAccumulating = netFlow >= 0;
-          const change = token.priceChange24h ?? 0;
-
-          return (
-            <div
-              key={token.symbol}
-              onClick={() => onSelectToken?.(token.symbol)}
-              className="bg-slate-900/60 hover:bg-slate-800/80 p-3.5 rounded-xl border border-slate-800/80 hover:border-cyan-500/50 transition-all cursor-pointer group shadow-lg"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2.5 gap-2.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-mono text-slate-500 font-bold w-5">
-                    #{index + 1}
-                  </span>
-                  
-                  {/* Token Icon */}
-                  <TokenIcon symbol={token.symbol} className="w-6 h-6" />
-
-                  {/* Token Symbol, Name & CapBadge */}
-                  <span className="font-extrabold text-white text-sm uppercase group-hover:text-cyan-300 transition-colors">
-                    {token.symbol}
-                  </span>
-                  <span className="text-xs text-slate-400">({token.name})</span>
-
-                  {/* CapBadge chuẩn xác */}
-                  <CapBadge
-                    symbol={token.symbol}
-                    marketCapUSD={token.marketCapUSD}
-                    basePrice={token.binancePrice}
-                  />
-
-                  {/* Price 24h Change Badge */}
-                  <span
-                    className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
-                      change >= 0
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                    }`}
-                  >
-                    {change >= 0 ? '+' : ''}{change.toFixed(2)}%
-                  </span>
-
-                  {/* Multi-Exchange Price Comparison Badges */}
-                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px]">
-                    <span className="px-2 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700/60">
-                      Binance: <strong className="text-white">{formatPrice(token.binancePrice)}</strong>
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800/90 text-cyan-300 border border-cyan-500/30">
-                      Bình quân: <strong className="text-cyan-200">{formatPrice(token.globalAvgPrice)}</strong>
-                    </span>
-                    {token.quoteVolumeUSD && (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800/70 text-slate-400 text-[10px]">
-                        Vol: ${formatMillions(token.quoteVolumeUSD)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Net Whale Flow Outcome Badge */}
-                <div className="text-right shrink-0">
-                  {isAccumulating ? (
-                    <span className="text-xs font-bold text-emerald-300 bg-emerald-950/70 px-2.5 py-1 rounded-md border border-emerald-700/60 flex items-center gap-1 shadow-sm shadow-emerald-950">
-                      <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                      Đang gom ròng: +${formatMillions(netFlow)}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-rose-300 bg-rose-950/70 px-2.5 py-1 rounded-md border border-rose-700/60 flex items-center gap-1 shadow-sm shadow-rose-950">
-                      <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-                      Đang xả ròng: -${formatMillions(Math.abs(netFlow))}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Biểu đồ phân bổ 2 bên (Dual-sided Split Bar) */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                  <span className="text-rose-400 font-bold flex items-center gap-1">
-                    Nạp CEX: ${formatMillions(token.inflowUsd)} ({inflowPct}%)
-                  </span>
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    Rút ví gom: ${formatMillions(token.outflowUsd)} ({outflowPct}%)
-                  </span>
-                </div>
-                <div className="w-full h-3.5 bg-slate-950 rounded-full flex overflow-hidden p-0.5 border border-slate-800 relative">
-                  {/* Left: Inflow (Xả - Đỏ Rose) */}
-                  <div
-                    style={{ width: `${inflowPct}%` }}
-                    className="bg-gradient-to-r from-rose-600 via-rose-500 to-rose-400 h-full rounded-l-full transition-all duration-500 relative flex items-center justify-start pl-2"
-                  >
-                    {inflowPct > 18 && (
-                      <span className="text-[9px] font-bold text-white font-mono drop-shadow">
-                        {inflowPct}%
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Glowing center divider line */}
-                  <div className="w-1 h-full bg-white z-10 shadow-[0_0_8px_#ffffff]" />
-
-                  {/* Right: Outflow (Gom - Xanh Emerald) */}
-                  <div
-                    style={{ width: `${outflowPct}%` }}
-                    className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 h-full rounded-r-full transition-all duration-500 relative flex items-center justify-end pr-2"
-                  >
-                    {outflowPct > 18 && (
-                      <span className="text-[9px] font-bold text-slate-950 font-mono drop-shadow">
-                        {outflowPct}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {displayedList.map((token, index) => (
+          <WhaleRadarCard
+            key={token.symbol}
+            token={token}
+            index={index}
+            onSelectToken={onSelectToken}
+          />
+        ))}
       </div>
 
       {/* Footer / Load More Action */}
@@ -515,3 +543,6 @@ export function WhaleFlowRadar({
     </div>
   );
 }
+
+export const WhaleFlowRadar = React.memo(WhaleFlowRadarComponent);
+

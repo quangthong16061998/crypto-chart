@@ -18,7 +18,7 @@ interface HeroMetricsProps {
   overview: MarketOverview | null;
 }
 
-export function HeroMetrics({ overview }: HeroMetricsProps) {
+function HeroMetricsComponent({ overview }: HeroMetricsProps) {
   if (!overview) return null;
 
   const totalInflow = overview.cex_total_inflow_24h || 1840000000;
@@ -200,3 +200,6 @@ export function HeroMetrics({ overview }: HeroMetricsProps) {
     </div>
   );
 }
+
+export const HeroMetrics = React.memo(HeroMetricsComponent);
+

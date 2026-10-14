@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -41,9 +41,11 @@ import { CoinTable } from '@/components/dashboard/CoinTable';
 import { getCapTierAudit } from '@/lib/capTierEngine';
 import { CapTierModalSection } from '@/components/dashboard/CapTierModalSection';
 import { CapBadge } from '@/components/dashboard/CapBadge';
+import { LiveWhaleFlipAlert } from '@/components/dashboard/LiveWhaleFlipAlert';
+import TopMacroBuyRadar from '@/components/dashboard/TopMacroBuyRadar';
 
 // High-fidelity crypto logos with official CDN avatar support and crisp vector SVG fallback
-export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; className?: string }) => {
+export const TokenIcon = React.memo(({ symbol, className = "w-7 h-7" }: { symbol: string; className?: string }) => {
   const [imgError, setImgError] = useState(false);
   const logoUrl = getTokenLogoUrl(symbol);
 
@@ -58,8 +60,9 @@ export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; c
         src={logoUrl}
         alt={symbol}
         referrerPolicy="no-referrer"
-        className={`${className} rounded-full object-contain bg-slate-900/90 p-0.5 border border-slate-700/60 shrink-0 inline-block shadow-sm transition-transform duration-200 group-hover:scale-105`}
         loading="lazy"
+        decoding="async"
+        className={`${className} rounded-full object-contain bg-slate-900/90 p-0.5 border border-slate-700/60 shrink-0 inline-block shadow-sm transition-transform duration-200 group-hover:scale-105`}
         onError={() => setImgError(true)}
       />
     );
@@ -317,7 +320,7 @@ export const TokenIcon = ({ symbol, className = "w-7 h-7" }: { symbol: string; c
       );
     }
   }
-};
+});
 
 export interface TokenItem {
   id: string;
@@ -342,6 +345,8 @@ export interface TokenItem {
   entryTarget: string;
   stopLoss: string;
   takeProfit: string;
+  isSpot?: boolean;
+  futuresOnly?: boolean;
   binancePrice?: number;
   okxPrice?: number;
   coinbasePrice?: number;
@@ -358,6 +363,157 @@ const LIVE_WHALE_ALERTS = [
   { id: 5, type: 'OUTFLOW', text: '42,000 ETH ($131M) rút khỏi Kraken -> Lido / Cold Storage', time: '11 phút trước', coin: 'ETH' },
   { id: 6, type: 'INFLOW', text: '14,000,000 XPL ($19.8M) vừa nạp lên KuCoin (Áp lực bán mạnh)', time: '14 phút trước', coin: 'XPL' }
 ];
+
+interface TopBuyCardProps {
+  coin: TokenItem;
+  index: number;
+  flash?: 'up' | 'down';
+  onSelectToken: (coin: TokenItem) => void;
+  formatUSD: (price: number) => string;
+}
+
+const TopBuyCard = React.memo(function TopBuyCard({
+  coin,
+  index,
+  flash,
+  onSelectToken,
+  formatUSD,
+}: TopBuyCardProps) {
+  return (
+    <div
+      onClick={() => onSelectToken(coin)}
+      className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-emerald-900/40 hover:border-emerald-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-950/40 flex items-center justify-between gpu-layer"
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="relative shrink-0">
+          <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full font-bold text-[10px] flex items-center justify-center border ${
+            index < 3
+              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
+              : 'bg-emerald-950 text-emerald-300 border-emerald-600/50'
+          }`}>
+            #{index + 1}
+          </span>
+          <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            <span className="font-bold text-white group-hover:text-cyan-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
+              {coin.name}
+            </span>
+            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0">
+              {coin.category}
+            </span>
+            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
+          </div>
+          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
+            <span className="text-emerald-400 font-mono font-medium shrink-0">
+              Rút ví: +${coin.whaleOutflowUSD}M
+            </span>
+            <span>•</span>
+            <span className="shrink-0">RSI: {coin.rsi}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-right">
+        <div className={`font-mono font-bold text-xs sm:text-sm transition-all duration-300 ${
+          flash === 'up'
+            ? 'text-emerald-300 bg-emerald-500/20 px-1.5 rounded'
+            : flash === 'down'
+            ? 'text-rose-300 bg-rose-500/20 px-1.5 rounded'
+            : 'text-slate-100'
+        }`}>
+          {formatUSD(coin.basePrice)}
+        </div>
+        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+          <span className="text-[11px] font-semibold text-emerald-400 flex items-center">
+            +{coin.priceChange24h}%
+          </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+            Score {coin.spotScore}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+interface TopAvoidCardProps {
+  coin: TokenItem;
+  index: number;
+  flash?: 'up' | 'down';
+  onSelectToken: (coin: TokenItem) => void;
+  formatUSD: (price: number) => string;
+}
+
+const TopAvoidCard = React.memo(function TopAvoidCard({
+  coin,
+  index,
+  flash,
+  onSelectToken,
+  formatUSD,
+}: TopAvoidCardProps) {
+  return (
+    <div
+      onClick={() => onSelectToken(coin)}
+      className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-rose-900/40 hover:border-rose-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-rose-950/40 flex items-center justify-between gpu-layer"
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="relative shrink-0">
+          <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-rose-950 text-rose-300 font-bold text-[10px] flex items-center justify-center border border-rose-600/50">
+            #{index + 1}
+          </span>
+          <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            <span className="font-bold text-white group-hover:text-rose-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
+              {coin.name}
+            </span>
+            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
+            <span className="bg-rose-500/20 text-rose-400 text-[9px] px-1.5 py-0.5 rounded border border-rose-500/30 font-bold whitespace-nowrap shrink-0">
+              <span className="hidden sm:inline">{coin.statusLabel.slice(0, 16)}</span>
+              <span className="inline sm:hidden">{coin.statusLabel.includes('QUÁ MUA') ? 'Quá Mua' : coin.statusLabel.includes('XẢ') ? 'Xả Mạnh' : 'Né Spot'}</span>
+            </span>
+            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
+          </div>
+          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
+            <span className="text-rose-400 font-mono font-medium shrink-0">
+              Nạp xả: -${coin.whaleInflowUSD}M
+            </span>
+            <span>•</span>
+            <span className={`shrink-0 ${coin.rsi > 70 ? 'text-amber-400 font-bold' : ''}`}>
+              RSI: {coin.rsi}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-right">
+        <div className={`font-mono font-bold text-xs sm:text-sm transition-all duration-300 ${
+          flash === 'up'
+            ? 'text-emerald-300 bg-emerald-500/20 px-1.5 rounded'
+            : flash === 'down'
+            ? 'text-rose-300 bg-rose-500/20 px-1.5 rounded'
+            : 'text-slate-100'
+        }`}>
+          {formatUSD(coin.basePrice)}
+        </div>
+        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+          <span className={`text-[11px] font-semibold flex items-center ${
+            coin.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
+          }`}>
+            {coin.priceChange24h >= 0 ? `+${coin.priceChange24h}%` : `${coin.priceChange24h}%`}
+          </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
+            Score {coin.spotScore}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export default function App() {
   const [tokens, setTokens] = useState<TokenItem[]>(TOP_100_COINS);
@@ -419,39 +575,56 @@ export default function App() {
     );
   }, [multiPrices]);
 
+  const tokensRef = useRef(tokens);
+  tokensRef.current = tokens;
+
   // Giữ cho modal tự động cập nhật token mới nhất khi giá nhảy
   useEffect(() => {
     if (selectedToken) {
       const refreshed = tokens.find((t) => t.id === selectedToken.id);
-      if (refreshed) {
+      if (refreshed && (refreshed.basePrice !== selectedToken.basePrice || refreshed.whaleOutflowUSD !== selectedToken.whaleOutflowUSD)) {
         setSelectedToken(refreshed);
       }
     }
   }, [tokens, selectedToken?.id]);
 
+  // Cho phép đóng modal bằng phím Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedToken(null);
+    };
+    if (selectedToken) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [selectedToken]);
+
   useEffect(() => {
     if (!autoLiveFeed) return;
 
-    // Simulate high-frequency tick updates with green/red flash effects
+    let flashTimer: NodeJS.Timeout;
+
+    // Simulate realistic tick updates (3200ms interval, cập nhật 1-2 token mượt mà không gây giật lag)
     const interval = setInterval(() => {
+      const newFlashes: Record<string, 'up' | 'down'> = {};
+
       setTokens((prev) => {
-        const count = Math.floor(Math.random() * 3) + 2;
+        const count = Math.floor(Math.random() * 2) + 1;
         const indicesToUpdate = new Set<number>();
         while (indicesToUpdate.size < count) {
           indicesToUpdate.add(Math.floor(Math.random() * prev.length));
         }
 
-        const newFlashes: Record<string, 'up' | 'down'> = {};
         const nextTokens = prev.map((token, idx) => {
           if (!indicesToUpdate.has(idx)) return token;
 
-          const pct = (Math.random() * 0.7 - 0.35) / 100;
+          const pct = (Math.random() * 0.5 - 0.25) / 100;
           const decimals = getDecimalsForPrice(token.basePrice);
           const newPrice = Math.max(0.00000001, token.basePrice * (1 + pct));
           const direction: 'up' | 'down' = newPrice >= token.basePrice ? 'up' : 'down';
           newFlashes[token.symbol] = direction;
 
-          const deltaFlow = (Math.random() * 1.8 - 0.9);
+          const deltaFlow = (Math.random() * 1.2 - 0.6);
           const newOutflow = Math.max(0.1, +(token.whaleOutflowUSD + (direction === 'up' ? Math.abs(deltaFlow) : -Math.abs(deltaFlow) * 0.5)).toFixed(1));
           const newInflow = Math.max(0.1, +(token.whaleInflowUSD + (direction === 'down' ? Math.abs(deltaFlow) : -Math.abs(deltaFlow) * 0.5)).toFixed(1));
           const newNet = +(newOutflow - newInflow).toFixed(1);
@@ -488,36 +661,50 @@ export default function App() {
           };
         });
 
-        setPriceFlashMap((prevFlashes) => ({ ...prevFlashes, ...newFlashes }));
-
-        setTimeout(() => {
-          setPriceFlashMap({});
-        }, 850);
-
         return nextTokens;
       });
-    }, 2400);
 
-    return () => clearInterval(interval);
+      setPriceFlashMap(newFlashes);
+      flashTimer = setTimeout(() => {
+        setPriceFlashMap({});
+      }, 700);
+    }, 3200);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(flashTimer);
+    };
   }, [autoLiveFeed]);
 
-  // TOP 10 SPOT BUYS TODAY - Xếp hạng 10 đồng có Spot Score cao nhất
+  // TOP 10 SPOT BUYS TODAY - Xếp hạng 10 đồng có Spot Score cao nhất (Chỉ lấy coin SPOT, lọc bỏ futures-only)
   const topBuys = useMemo(() => {
     return [...tokens]
-      .filter((t) => t.status === 'BUY_SPOT')
-      .sort((a, b) => b.spotScore - a.spotScore);
+      .filter((t) => t.status === 'BUY_SPOT' && t.isSpot !== false && !t.futuresOnly && !['KAS', 'BRETT', 'XPL'].includes(t.symbol.toUpperCase()))
+      .sort((a, b) => b.spotScore - a.spotScore)
+      .slice(0, 10);
   }, [tokens]);
 
   // AVOID / HIGH RISK TODAY - Xếp hạng 10 đồng có rủi ro xả / quá mua cao nhất
   const topAvoids = useMemo(() => {
     return [...tokens]
       .filter((t) => t.status === 'AVOID')
-      .sort((a, b) => a.spotScore - b.spotScore);
+      .sort((a, b) => a.spotScore - b.spotScore)
+      .slice(0, 10);
   }, [tokens]);
 
-  const buyCount = useMemo(() => tokens.filter((t) => t.status === 'BUY_SPOT').length, [tokens]);
-  const avoidCount = useMemo(() => tokens.filter((t) => t.status === 'AVOID').length, [tokens]);
-  const highSpreadCount = useMemo(() => tokens.filter((t) => (t.spreadPct ?? 0.12) >= 0.35).length, [tokens]);
+  // Đếm nhanh các chỉ số bộ lọc trong 1 vòng lặp duy nhất O(N) không tạo mảng rác
+  const { buyCount, avoidCount, highSpreadCount } = useMemo(() => {
+    let buy = 0;
+    let avoid = 0;
+    let highSpread = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.status === 'BUY_SPOT') buy++;
+      else if (t.status === 'AVOID') avoid++;
+      if ((t.spreadPct ?? 0.12) >= 0.35) highSpread++;
+    }
+    return { buyCount: buy, avoidCount: avoid, highSpreadCount: highSpread };
+  }, [tokens]);
 
   // Lọc bảng Screener đa chiều
   const filteredTokens = useMemo(() => {
@@ -567,10 +754,10 @@ export default function App() {
     setCurrentPage(1);
   }, [selectedSignal, selectedExchange, selectedCategory, searchQuery, tableScope]);
 
-  // Chuyển đổi danh sách tokens sang format TokenFlow của WhaleFlowRadar chuẩn realtime
+  // Chuyển đổi danh sách tokens sang format TokenFlow của WhaleFlowRadar chuẩn realtime (O(1) memoized cap audit)
   const tokenFlowList: TokenFlow[] = useMemo(() => {
     return tokens.map((t) => {
-      const capAudit = getCapTierAudit({ symbol: t.symbol, basePrice: t.basePrice, globalAvgPrice: t.globalAvgPrice });
+      const capAudit = getCapTierAudit({ symbol: t.symbol });
       return {
         symbol: t.symbol,
         name: t.name,
@@ -583,94 +770,60 @@ export default function App() {
         spotScore: t.spotScore,
         priceChange24h: t.priceChange24h,
         volume24h: t.volume24h,
-        quoteVolumeUSD: (t.whaleInflowUSD + t.whaleOutflowUSD) * 1_000_000 * 5, // Volume 24h quy mô đầy đủ
+        quoteVolumeUSD: (t.whaleInflowUSD + t.whaleOutflowUSD) * 5_000_000,
         marketCapUSD: capAudit.marketCapUSD,
       };
     });
   }, [tokens]);
 
-  // Aggregate Whale Market Pressure Stats
+  // Aggregate Whale Market Pressure Stats O(N) 1 vòng lặp duy nhất
   const aggregateFlow = useMemo(() => {
-    const totalInflow = tokens.reduce((acc, c) => acc + c.whaleInflowUSD, 0);
-    const totalOutflow = tokens.reduce((acc, c) => acc + c.whaleOutflowUSD, 0);
+    let totalInflow = 0;
+    let totalOutflow = 0;
+    for (let i = 0; i < tokens.length; i++) {
+      totalInflow += tokens[i].whaleInflowUSD;
+      totalOutflow += tokens[i].whaleOutflowUSD;
+    }
     const net = totalOutflow - totalInflow;
-    const totalVol = totalInflow + totalOutflow;
+    const totalVol = totalInflow + totalOutflow || 1;
     const outflowRatio = Math.round((totalOutflow / totalVol) * 100);
     const inflowRatio = 100 - outflowRatio;
     return { totalInflow, totalOutflow, net, outflowRatio, inflowRatio };
   }, [tokens]);
 
-  const formatUSD = (val: number) => {
+  const formatUSD = useCallback((val: number) => {
     return formatCryptoPrice(val);
-  };
+  }, []);
 
   const handleSelectTokenSymbol = useCallback((symbol: string) => {
-    const found = tokens.find((t) => t.symbol.toUpperCase() === symbol.toUpperCase());
+    const found = tokensRef.current.find((t: TokenItem) => t.symbol.toUpperCase() === symbol.toUpperCase());
     if (found) {
       setSelectedToken(found);
     }
-  }, [tokens]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#070A12] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Background Cyberpunk Ambient Glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[140px]" />
-        <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-10 left-1/3 w-[600px] h-[600px] bg-rose-600/10 rounded-full blur-[160px]" />
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden gpu-layer">
+        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[100px] transform-gpu" />
+        <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[100px] transform-gpu" />
+        <div className="absolute bottom-10 left-1/3 w-[600px] h-[600px] bg-rose-600/10 rounded-full blur-[100px] transform-gpu" />
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25" />
       </div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* HEADER */}
         <header className="border-b border-slate-800/80 bg-[#090D18]/90 backdrop-blur-xl sticky top-0 z-40">
-          {/* Top Marquee Alert Banner */}
-          <div className="bg-gradient-to-r from-rose-950/40 via-slate-900/80 to-emerald-950/40 border-b border-slate-800/60 py-1.5 px-4 overflow-hidden text-xs">
-            <div className="w-full max-w-[1780px] mx-auto flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-cyan-400 font-semibold shrink-0">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-                </span>
-                <span className="tracking-wider uppercase text-[11px]">WHALE PULSE LIVE FEED</span>
-              </div>
-              <div className="flex-1 overflow-hidden whitespace-nowrap">
-                <div className="inline-flex gap-8 animate-marquee">
-                  {LIVE_WHALE_ALERTS.map((alert) => (
-                    <div key={alert.id} className="inline-flex items-center gap-2 text-slate-300">
-                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                        alert.type === 'OUTFLOW' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                      }`}>
-                        {alert.type === 'OUTFLOW' ? 'RÚT VÍ TÍCH LŨY' : 'NẠP SÀN CẢNH BÁO'}
-                      </span>
-                      <span>{alert.text}</span>
-                      <span className="text-slate-500 text-[10px]">({alert.time})</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => refreshPrices()}
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border border-slate-700 hover:border-cyan-500/50 text-slate-300 transition-colors"
-                  title="Cập nhật lại giá đa sàn ngay lập tức"
-                >
-                  <RefreshCw className={`w-3 h-3 ${multiLoading ? 'animate-spin text-cyan-400' : ''}`} />
-                  Đa Sàn
-                </button>
-                <button
-                  onClick={() => setAutoLiveFeed(!autoLiveFeed)}
-                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${
-                    autoLiveFeed ? 'border-cyan-500/40 text-cyan-300 bg-cyan-500/10' : 'border-slate-700 text-slate-400'
-                  }`}
-                  title="Bật/Tắt cập nhật Realtime liên tục"
-                >
-                  <Activity className={`w-3 h-3 ${autoLiveFeed ? 'animate-pulse text-cyan-400' : ''}`} />
-                  {autoLiveFeed ? 'Live 60fps' : 'Tạm dừng'}
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Top Live Whale Flip Alert Banner (Thông báo kiểu lật lật tối ưu Mobile & Desktop) */}
+          <LiveWhaleFlipAlert
+            alerts={LIVE_WHALE_ALERTS}
+            onRefreshPrices={refreshPrices}
+            multiLoading={multiLoading}
+            autoLiveFeed={autoLiveFeed}
+            setAutoLiveFeed={setAutoLiveFeed}
+            onSelectToken={handleSelectTokenSymbol}
+          />
 
           {/* Main Navigation Bar */}
           <div className="w-full max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
@@ -767,68 +920,16 @@ export default function App() {
 
               {/* 10 Top Buys Cards List */}
               <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
-                {topBuys.slice(0, 10).map((coin, index) => {
-                  const flash = priceFlashMap[coin.symbol];
-                  return (
-                    <div
-                      key={coin.id}
-                      onClick={() => setSelectedToken(coin)}
-                      className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-emerald-900/40 hover:border-emerald-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-950/40 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="relative shrink-0">
-                          <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full font-bold text-[10px] flex items-center justify-center border ${
-                            index < 3
-                              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-sm'
-                              : 'bg-emerald-950 text-emerald-300 border-emerald-600/50'
-                          }`}>
-                            #{index + 1}
-                          </span>
-                          <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-nowrap">
-                            <span className="font-bold text-white group-hover:text-cyan-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
-                              {coin.name}
-                            </span>
-                            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap shrink-0">
-                              {coin.category}
-                            </span>
-                            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
-                          </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
-                            <span className="text-emerald-400 font-mono font-medium shrink-0">
-                              Rút ví: +${coin.whaleOutflowUSD}M
-                            </span>
-                            <span>•</span>
-                            <span className="shrink-0">RSI: {coin.rsi}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className={`font-mono font-bold text-xs sm:text-sm transition-all duration-300 ${
-                          flash === 'up'
-                            ? 'text-emerald-300 bg-emerald-500/20 px-1.5 rounded'
-                            : flash === 'down'
-                            ? 'text-rose-300 bg-rose-500/20 px-1.5 rounded'
-                            : 'text-slate-100'
-                        }`}>
-                          {formatUSD(coin.basePrice)}
-                        </div>
-                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                          <span className="text-[11px] font-semibold text-emerald-400 flex items-center">
-                            +{coin.priceChange24h}%
-                          </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
-                            Score {coin.spotScore}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {topBuys.slice(0, 10).map((coin, index) => (
+                  <TopBuyCard
+                    key={coin.id}
+                    coin={coin}
+                    index={index}
+                    flash={priceFlashMap[coin.symbol]}
+                    onSelectToken={setSelectedToken}
+                    formatUSD={formatUSD}
+                  />
+                ))}
               </div>
             </div>
 
@@ -857,72 +958,27 @@ export default function App() {
 
               {/* 10 Avoid Cards List */}
               <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
-                {topAvoids.slice(0, 10).map((coin, index) => {
-                  const flash = priceFlashMap[coin.symbol];
-                  return (
-                    <div
-                      key={coin.id}
-                      onClick={() => setSelectedToken(coin)}
-                      className="group cursor-pointer rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-rose-900/40 hover:border-rose-500/60 p-3 transition-all duration-200 hover:shadow-lg hover:shadow-rose-950/40 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="relative shrink-0">
-                          <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-rose-950 text-rose-300 font-bold text-[10px] flex items-center justify-center border border-rose-600/50">
-                            #{index + 1}
-                          </span>
-                          <TokenIcon symbol={coin.symbol} className="w-8 h-8" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-nowrap">
-                            <span className="font-bold text-white group-hover:text-rose-300 transition-colors text-xs sm:text-sm truncate max-w-[85px] xs:max-w-[120px] sm:max-w-none">
-                              {coin.name}
-                            </span>
-                            <span className="text-xs font-mono text-slate-400 shrink-0">({coin.symbol})</span>
-                            <span className="bg-rose-500/20 text-rose-400 text-[9px] px-1.5 py-0.5 rounded border border-rose-500/30 font-bold whitespace-nowrap shrink-0">
-                              <span className="hidden sm:inline">{coin.statusLabel.slice(0, 16)}</span>
-                              <span className="inline sm:hidden">{coin.statusLabel.includes('QUÁ MUA') ? 'Quá Mua' : coin.statusLabel.includes('XẢ') ? 'Xả Mạnh' : 'Né Spot'}</span>
-                            </span>
-                            <CapBadge symbol={coin.symbol} basePrice={coin.basePrice} className="whitespace-nowrap shrink-0" />
-                          </div>
-                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 whitespace-nowrap truncate">
-                            <span className="text-rose-400 font-mono font-medium shrink-0">
-                              Nạp xả: -${coin.whaleInflowUSD}M
-                            </span>
-                            <span>•</span>
-                            <span className={`shrink-0 ${coin.rsi > 70 ? 'text-amber-400 font-bold' : ''}`}>
-                              RSI: {coin.rsi}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className={`font-mono font-bold text-xs sm:text-sm transition-all duration-300 ${
-                          flash === 'up'
-                            ? 'text-emerald-300 bg-emerald-500/20 px-1.5 rounded'
-                            : flash === 'down'
-                            ? 'text-rose-300 bg-rose-500/20 px-1.5 rounded'
-                            : 'text-slate-100'
-                        }`}>
-                          {formatUSD(coin.basePrice)}
-                        </div>
-                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                          <span className={`text-[11px] font-semibold flex items-center ${
-                            coin.priceChange24h >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                          }`}>
-                            {coin.priceChange24h >= 0 ? `+${coin.priceChange24h}%` : `${coin.priceChange24h}%`}
-                          </span>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-mono">
-                            Score {coin.spotScore}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {topAvoids.slice(0, 10).map((coin, index) => (
+                  <TopAvoidCard
+                    key={coin.id}
+                    coin={coin}
+                    index={index}
+                    flash={priceFlashMap[coin.symbol]}
+                    onSelectToken={setSelectedToken}
+                    formatUSD={formatUSD}
+                  />
+                ))}
               </div>
             </div>
           </div>
+
+          {/* TOP NÊN MUA TOÀN DIỆN THEO CHU KỲ DÒNG TIỀN (NGẮN HẠN VS DÀI HẠN) */}
+          <TopMacroBuyRadar
+            tokens={tokens}
+            onSelectToken={setSelectedToken}
+            onSelectSymbol={handleSelectTokenSymbol}
+            formatUSD={formatUSD}
+          />
 
           {/* DEDICATED WHALE FLOW RADAR WITH TOP 100 COINS CAPABILITY */}
           <WhaleFlowRadar
@@ -1010,15 +1066,22 @@ export default function App() {
           });
 
           return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div
+              onClick={() => setSelectedToken(null)}
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+            >
               <div
-                className="relative w-full max-w-2xl bg-[#0B0F1D] border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-5"
+                className="relative w-full max-w-2xl bg-[#0B0F1D] border border-slate-700/80 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-5 cursor-default"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Close Button */}
                 <button
-                  onClick={() => setSelectedToken(null)}
-                  className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors z-20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedToken(null);
+                  }}
+                  aria-label="Đóng modal"
+                  className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors z-20 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>

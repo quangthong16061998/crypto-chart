@@ -118,3 +118,21 @@ body {
 .animate-radar {
   animation: radar-sweep 4s linear infinite;
 }
+
+/* GPU Acceleration & Performance Optimizations */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Off-screen rendering optimization: Skips styling and layout for off-screen DOM until scrolled near */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 400px;
+}
+
+/* Optimize table and card rendering */
+.table-optimized {
+  contain: layout style paint;
+}
+

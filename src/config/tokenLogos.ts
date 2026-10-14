@@ -100,6 +100,8 @@ export const TOKEN_LOGO_MAP: Record<string, string> = {
   TNSR: "https://s2.coinmarketcap.com/static/img/coins/64x64/30353.png",
   REZ: "https://s2.coinmarketcap.com/static/img/coins/64x64/30748.png",
   LISTA: "https://s2.coinmarketcap.com/static/img/coins/64x64/31517.png",
+  ZEC: "https://assets.coincap.io/assets/icons/zec@2x.png",
+  HYPE: "https://s2.coinmarketcap.com/static/img/coins/64x64/32196.png",
 };
 
 /**
